@@ -1,1 +1,0 @@
-workspaces { name = "devops-aws-pldr-dev"}
