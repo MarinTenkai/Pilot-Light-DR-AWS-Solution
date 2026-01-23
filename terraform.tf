@@ -5,7 +5,7 @@ terraform {
     hostname     = "app.terraform.io"
     organization = "marin-tenkai"
     workspaces {
-      name = "devops-aws-pldr-dev"
+      name = "devops-aws-pldr-prod"
     }
   }
 
