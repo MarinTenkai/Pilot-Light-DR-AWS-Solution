@@ -45,11 +45,12 @@ module "vpc_primary" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
+  #Por motivos de coste en este entorno de ejemplo, no se crea NAT Gateway ni se permite. En un entorno real, se debería habilitar.
   # Internet egress
-  enable_nat_gateway = true
+  enable_nat_gateway = false
 
-  one_nat_gateway_per_az = false
-  single_nat_gateway     = true
+  #one_nat_gateway_per_az = true
+  #single_nat_gateway     = false
 
   # DB Subnet Group para Autora/RDS
   create_database_subnet_group = true
