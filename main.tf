@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-south-2"
+  region = var.primary_region
   default_tags {
     tags = {
       Environment = terraform.workspace
@@ -11,18 +11,59 @@ provider "aws" {
 }
 
 #Extrae la lista de zonas disponibles en la region seleccionada
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 data "aws_region" "current" {}
 
+locals {
+  # Selecciona las primeras N AZss disponibles en la región primaria
+  azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+
+  common_tags = {
+    Project     = var.project_name
+    Environment = terraform.workspace
+    ManagedBy   = "Terraform"
+    RegionRole  = "Primary"
+  }
+}
+
 #Recursos de Red, VPC, Subnets, IGW, Route Tables, NACLs, Security Groups
-module "vpc_main" {
+module "vpc_primary" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
 
-  name = "vpc-main-${terraform.workspace}"
-  cidr = "10.0.0.0/16"
+  name = "${var.project_name}-${terraform.workspace}-primary"
+  cidr = var.vpc_primary_cidr
+  azs  = local.azs
 
-  azs             = ["eu-south-2a", "eu-south-2c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
+  # Subnets
+  public_subnets   = var.public_subnets_cidrs
+  private_subnets  = var.private_subnets_cidrs
+  database_subnets = var.database_subnets_cidrs
+
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  # Internet egress
+  enable_nat_gateway = true
+
+  one_nat_gateway_per_az = false
+  single_nat_gateway     = true
+
+  # DB Subnet Group para Autora/RDS
+  create_database_subnet_group = true
+
+  # Etiquetas
+  tags = local.common_tags
+
+  # Tags por subnet
+  public_subnet_tags = merge(local.common_tags, {
+  Tier = "Public" })
+
+  private_subnet_tags = merge(local.common_tags, {
+  Tier = "Private-app" })
+
+  database_subnet_tags = merge(local.common_tags, {
+  Tier = "Private-db" })
 }
