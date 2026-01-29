@@ -251,12 +251,15 @@ module "alb" {
   # Target Groups para el ASG de Frontend
 
   target_groups = {
+    target_id = "frontend"
     frontend = {
       name_prefix          = "tg-"
       protocol             = "HTTP"
       port                 = var.frontend_port
       target_type          = "instance"
       deregistration_delay = 10
+
+      create_attachment = false
 
       health_check = {
         enabled             = true
