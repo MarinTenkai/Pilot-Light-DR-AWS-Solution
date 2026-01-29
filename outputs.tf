@@ -21,3 +21,8 @@ output "database_subnets" {
   description = "IDs de subnets privadas (db)"
   value       = module.vpc_primary.database_subnets
 }
+
+output "flow_logs_s3_destination_arn" {
+  description = "ARN destino para VPC Flow Logs (bucket + prefix)"
+  value       = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
+}

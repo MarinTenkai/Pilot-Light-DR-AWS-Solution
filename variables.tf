@@ -24,11 +24,10 @@ variable "flow_logs_traffic_type" {
   }
 }
 
-variable "flow_logs_s3_destination_arn" {
-  type        = string
-  description = "ARN del bucket S3 donde se enviarán los Flow Logs"
+variable "flow_logs_s3_prefix" {
+  type    = string
+  default = "vpc_flow-logs/"
 }
-
 ##Primary Region Variables##
 
 variable "primary_region" {

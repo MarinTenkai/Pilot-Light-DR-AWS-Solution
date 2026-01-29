@@ -15,6 +15,7 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   # Selecciona las primeras N AZss disponibles en la región primaria
@@ -70,12 +71,75 @@ module "vpc_primary" {
   Tier = "Private-db" })
 }
 
+#VPC Flow Logs resources
 resource "aws_flow_log" "vpc_primary" {
   vpc_id               = module.vpc_primary.vpc_id
   traffic_type         = var.flow_logs_traffic_type
   log_destination_type = "s3"
-  log_destination      = var.flow_logs_s3_destination_arn
+  log_destination      = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
 
   max_aggregation_interval = 600
+
+  depends_on = [aws_s3_bucket_policy.flow_logs]
 }
 
+module "s3-bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.10.0"
+
+  bucket = "${var.project_name}-${terraform.workspace}-vpc-flow-logs"
+
+  # Seguridad base
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerEnforced"
+
+  # Cifrado por defecto (SSE-S3)
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "flow_logs" {
+  bucket = module.s3-bucket.s3_bucket_id
+
+  policy = jsonencode({
+    version = "2012-10-17"
+    statement = [
+      {
+        sid    = "AWSVPCFlowLogsWrite"
+        effect = "Allow"
+        principal = {
+          service = "vpc-flow-logs.amazonaws.com"
+        }
+        action   = "s3:PutObject"
+        resource = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}*"
+        condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+          ArnLike = {
+            "aws:SourceArn" = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:vpc-flow-log/*"
+          }
+        }
+      },
+      {
+        sid    = "AWSVPCFlowLogsAclCheck"
+        effect = "Allow"
+        principal = {
+          service = "vpc-flow-logs.amazonaws.com"
+        }
+        action   = "s3:GetBucketAcl"
+        resource = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}*"
+      }
+    ]
+  })
+}
