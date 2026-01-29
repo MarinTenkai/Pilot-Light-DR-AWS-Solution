@@ -11,11 +11,11 @@ provider "aws" {
 }
 
 #Extrae la lista de zonas disponibles en la region seleccionada
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
 
 locals {
   # Selecciona las primeras N AZss disponibles en la región primaria
@@ -29,7 +29,7 @@ locals {
   }
 }
 
-#Recursos de Red, VPC, Subnets, IGW, Route Tables, NACLs, Security Groups
+#Networking - VPC primaria
 module "vpc_primary" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
@@ -144,3 +144,182 @@ resource "aws_s3_bucket_policy" "flow_logs" {
   })
 }
 
+#Compute resources
+
+locals {
+  frontend_user_data = base64encode(<<-EOF
+    #!/bin/bash
+    dnf -y update || true
+    dnf -y install nginx || true
+    echo "frontend-ok" > /usr/share/nginx/html/index.html
+    systemctl enable nginx
+    systemctl start nginx
+  EOF
+  )
+}
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"] # Amazon Linux 2023
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
+## Security Group for Compute Resources
+
+# SG del ALB (Public)
+resource "aws_security_group" "alb_sg" {
+  name        = "${var.project_name}-${terraform.workspace}-alb-sg"
+  description = "Security Group for ALB in Primary Region"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress = {
+    description = "Allow HTTP from anywhere"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress = {
+    description    = "To Frontend targets"
+    from_port      = var.frontend_port
+    to_port        = var.frontend_port
+    protocol       = "tcp"
+    security_group = [aws_security_group.frontend_sg.id]
+  }
+}
+
+# SG de las instancias Frontend (Private)
+resource "aws_security_group" "frontend_sg" {
+  name        = "${var.project_name}-${terraform.workspace}-frontend-sg"
+  description = "Security Group for Frontend instances in Primary Region"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress = {
+    description    = "HTTP from ALB"
+    from_port      = var.frontend_port
+    to_port        = var.frontend_port
+    protocol       = "tcp"
+    security_group = [aws_security_group.alb_sg.id]
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "frontend_to_backend" {
+  count = var.backend_sg_id == null ? 0 : 1
+
+  security_group_id            = aws_security_group.frontend_sg.id
+  referenced_security_group_id = var.backend_sg_id
+
+  ip_protocol = "tcp"
+  from_port   = var.backend_port
+  to_port     = var.backend_port
+
+  description = "Allow Frontend to Backend communication"
+}
+
+# ALB (Public) + Target Group + Listener
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "10.5.0"
+
+  name               = "${var.project_name}-${terraform.workspace}-alb"
+  load_balancer_type = "application"
+  vpc_id             = module.vpc_primary.vpc_id
+  subnets            = module.vpc_primary.public_subnets
+  security_groups    = [aws_security_group.alb_sg.id]
+
+  # Listener HTTP :80
+  listeners = {
+    http = {
+      port     = 80
+      protocol = "HTTP"
+
+      forward = {
+        target_group_key = "frontend"
+      }
+    }
+  }
+
+  # Target Groups para el ASG de Frontend
+
+  target_groups = {
+    frontend = {
+      name_prefix          = "${var.project_name}-frontend-tg"
+      protocol             = "HTTP"
+      port                 = var.frontend_port
+      target_type          = "instance"
+      deregistration_delay = 10
+
+      health_check = {
+        enabled             = true
+        path                = var.frontend_healthcheck_path
+        protocol            = "HTTP"
+        matcher             = "200-399"
+        interval            = 30
+        timeout             = 5
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+      }
+    }
+  }
+}
+
+# Auto Scaling Group (Frontend) en subnets privadas
+
+module "autoscaling" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "9.1.0"
+
+  name = "${var.project_name}-${terraform.workspace}-frontend-asg"
+
+  # Subnets privadas (2 AZs)
+  vpc_zone_identifier = module.vpc_primary.private_subnets
+
+  min_size         = var.frontend_min_size
+  max_size         = var.frontend_max_size
+  desired_capacity = var.frontend_desired_capacity
+
+  # Health checks desde ALB
+  health_check_type         = "ELB"
+  health_check_grace_period = 60
+
+  # Adjunta el ASG al target group del ALB
+  traffic_source_attachments = {
+    frontend = {
+      traffic_source_identifier = module.alb.target_group_arns["frontend"].arn
+      traffic_source_type       = "elbv2"
+    }
+  }
+
+  # Launch Template (Dentro del módulo)
+  launch_template_name        = "${var.project_name}-${terraform.workspace}-frontend-lt"
+  launch_template_description = "Frontend LT"
+
+  image_id      = data.aws_ami.amazon_linux.id
+  instance_type = var.frontend_instance_type
+
+  # Sin key pair por defecto
+  key_name = var.key_name
+
+  # SG de las instancias
+  security_groups = [aws_security_group.frontend_sg.id]
+
+  # user data
+  user_data = var.frontend_user_data_base64
+
+  # Etiquetas en instancias
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${terraform.workspace}-frontend-instance"
+    Tier = "Frontend"
+  })
+}

@@ -30,3 +30,13 @@ output "flow_logs_s3_destination_arn" {
 output "debug_policy" {
   value = aws_s3_bucket_policy.flow_logs.policy
 }
+
+output "frontend_alb_dns_name" {
+  value       = module.alb.dns_name
+  description = "DNS público del ALB"
+}
+
+output "frontend_asg_name" {
+  value       = module.autoscaling.autoscaling_group_name
+  description = "Nombre del ASG del frontend"
+}

@@ -75,6 +75,59 @@ variable "database_subnets_cidrs_primary" {
   }
 }
 
+variable "frontend_instance_type" {
+  type    = string
+  default = "t3.micro"
+}
+
+variable "frontend_min_size" {
+  type    = number
+  default = 1
+}
+
+variable "frontend_max_size" {
+  type    = number
+  default = 2
+}
+
+variable "frontend_desired_capacity" {
+  type    = number
+  default = 1
+}
+
+variable "frontend_port" {
+  type    = number
+  default = 80
+}
+
+variable "frontend_healthcheck_path" {
+  type    = string
+  default = "/"
+}
+
+variable "frontend_user_data_base64" {
+  type        = string
+  description = "User data en BASE64 para instancias frontend"
+  default     = null
+}
+
+variable "backend_sg_id" {
+  description = "Security Group ID del backend. Cuando sea null, no se crea la regla de egress Frontend->Backend"
+  type        = string
+  default     = null
+}
+
+variable "backend_port" {
+  description = "Puerto del servicio backend al que el Frontend debe poder conectarse."
+  type        = number
+  default     = 8080
+}
+
+variable "key_name" {
+  type        = string
+  description = "Par de claves para SHH (Desactivado por defecto)"
+  default     = null
+}
 ##Secondary Region Variables##
 
 variable "secondary_region" {
