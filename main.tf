@@ -50,10 +50,10 @@ module "vpc_primary" {
   En un entorno real, se debería habilitar para asegurar la correcta comunicación de las subnets privadas.*/
 
   # Internet egress
-  enable_nat_gateway = false
+  enable_nat_gateway = true
 
-  #one_nat_gateway_per_az = true
-  #single_nat_gateway     = false
+  one_nat_gateway_per_az = true
+  single_nat_gateway     = false
 
   create_database_subnet_group = true # DB Subnet Group para Autora/RDS
 
