@@ -26,3 +26,7 @@ output "flow_logs_s3_destination_arn" {
   description = "ARN destino para VPC Flow Logs (bucket + prefix)"
   value       = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
 }
+
+output "debug_policy" {
+  value = aws_s3_bucket_policy.flow_logs.policy
+}

@@ -112,17 +112,17 @@ resource "aws_s3_bucket_policy" "flow_logs" {
   bucket = module.s3-bucket.s3_bucket_id
 
   policy = jsonencode({
-    version = "2012-10-17"
-    statement = [
+    Version = "2012-10-17"
+    Statement = [
       {
-        sid    = "AWSVPCFlowLogsWrite"
-        effect = "Allow"
-        principal = {
-          service = "vpc-flow-logs.amazonaws.com"
+        Sid    = "AWSVPCFlowLogsWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
         }
-        action   = "s3:PutObject"
-        resource = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}*"
-        condition = {
+        Action   = "s3:PutObject"
+        Resource = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}*"
+        Condition = {
           StringEquals = {
             "aws:SourceAccount" = data.aws_caller_identity.current.account_id
           }
@@ -132,14 +132,15 @@ resource "aws_s3_bucket_policy" "flow_logs" {
         }
       },
       {
-        sid    = "AWSVPCFlowLogsAclCheck"
-        effect = "Allow"
-        principal = {
-          service = "vpc-flow-logs.amazonaws.com"
+        Sid    = "AWSVPCFlowLogsAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
         }
-        action   = "s3:GetBucketAcl"
-        resource = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}*"
+        Action   = "s3:GetBucketAcl"
+        Resource = "${module.s3-bucket.s3_bucket_arn}"
       }
     ]
   })
 }
+
