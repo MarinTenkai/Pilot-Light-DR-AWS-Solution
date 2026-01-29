@@ -205,11 +205,11 @@ resource "aws_security_group" "frontend_sg" {
   vpc_id      = module.vpc_primary.vpc_id
 
   ingress {
-    description    = "HTTP from ALB"
-    from_port      = var.frontend_port
-    to_port        = var.frontend_port
-    protocol       = "tcp"
-    security_group = [aws_security_group.alb_sg.id]
+    description     = "HTTP from ALB"
+    from_port       = var.frontend_port
+    to_port         = var.frontend_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   dynamic "egress" {
@@ -294,7 +294,7 @@ module "autoscaling" {
   # Adjunta el ASG al target group del ALB
   traffic_source_attachments = {
     frontend = {
-      traffic_source_identifier = module.alb.target_group_arns["frontend"].arn
+      traffic_source_identifier = module.alb.target_groups["frontend"].arn
       traffic_source_type       = "elbv2"
     }
   }
