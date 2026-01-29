@@ -4,7 +4,7 @@ provider "aws" {
     tags = {
       Environment = terraform.workspace
       Owner       = "marin.tenkai"
-      Project     = "Pilot Light Disaster Recovery"
+      Project     = var.project_name
       terraform   = "true"
     }
   }
@@ -38,22 +38,23 @@ module "vpc_primary" {
   azs  = local.azs
 
   # Subnets
-  public_subnets   = var.public_subnets_cidrs
-  private_subnets  = var.private_subnets_cidrs
-  database_subnets = var.database_subnets_cidrs
+  public_subnets   = var.public_subnets_cidrs_primary
+  private_subnets  = var.private_subnets_cidrs_primary
+  database_subnets = var.database_subnets_cidrs_primary
 
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  #Por motivos de coste en este entorno de ejemplo, no se crea NAT Gateway ni se permite. En un entorno real, se debería habilitar.
+  /*Con el objetivo de reducir costes en este entorno de prueba, no se crea NAT Gateway ni se permite. 
+  En un entorno real, se debería habilitar para asegurar la correcta comunicación de las subnets privadas.*/
+
   # Internet egress
   enable_nat_gateway = false
 
   #one_nat_gateway_per_az = true
   #single_nat_gateway     = false
 
-  # DB Subnet Group para Autora/RDS
-  create_database_subnet_group = true
+  create_database_subnet_group = true # DB Subnet Group para Autora/RDS
 
   # Etiquetas
   tags = local.common_tags
