@@ -251,7 +251,6 @@ module "alb" {
   # Target Groups para el ASG de Frontend
 
   target_groups = {
-    target_id = "frontend"
     frontend = {
       name_prefix          = "tg-"
       protocol             = "HTTP"
