@@ -69,3 +69,13 @@ module "vpc_primary" {
   database_subnet_tags = merge(local.common_tags, {
   Tier = "Private-db" })
 }
+
+resource "aws_flow_log" "vpc_primary" {
+  vpc_id               = module.vpc_primary.vpc_id
+  traffic_type         = var.flow_logs_traffic_type
+  log_destination_type = "s3"
+  log_destination      = var.flow_logs_s3_destination_arn
+
+  max_aggregation_interval = 600
+}
+

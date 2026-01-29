@@ -11,6 +11,24 @@ variable "az_count" {
   type        = number
   default     = 2
 }
+
+#Flow Logs Variables
+
+variable "flow_logs_traffic_type" {
+  type        = string
+  default     = "ALL"
+  description = "Tipo de tráfico a capturar en los VPC Flow Logs (ALL, ACCEPT, REJECT)"
+  validation {
+    condition     = contains(["ALL", "ACCEPT", "REJECT"], var.flow_logs_traffic_type)
+    error_message = "flow_logs_traffic_type debe ser ALL, ACCEPT o REJECT"
+  }
+}
+
+variable "flow_logs_s3_destination_arn" {
+  type        = string
+  description = "ARN del bucket S3 donde se enviarán los Flow Logs"
+}
+
 ##Primary Region Variables##
 
 variable "primary_region" {
