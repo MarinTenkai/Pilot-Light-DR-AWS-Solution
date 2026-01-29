@@ -252,7 +252,7 @@ module "alb" {
 
   target_groups = {
     frontend = {
-      name_prefix          = "-tg"
+      name_prefix          = "tg-"
       protocol             = "HTTP"
       port                 = var.frontend_port
       target_type          = "instance"
