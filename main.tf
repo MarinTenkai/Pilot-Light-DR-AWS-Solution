@@ -230,7 +230,7 @@ module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "10.5.0"
 
-  name               = "${var.project_name}-${terraform.workspace}-alb"
+  name               = "${terraform.workspace}-alb"
   load_balancer_type = "application"
   vpc_id             = module.vpc_primary.vpc_id
   subnets            = module.vpc_primary.public_subnets
@@ -252,7 +252,7 @@ module "alb" {
 
   target_groups = {
     frontend = {
-      name_prefix          = "${var.project_name}-frontend-tg"
+      name_prefix          = "-tg"
       protocol             = "HTTP"
       port                 = var.frontend_port
       target_type          = "instance"
