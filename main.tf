@@ -181,7 +181,7 @@ resource "aws_security_group" "alb_sg" {
   description = "Security Group for ALB in Primary Region"
   vpc_id      = module.vpc_primary.vpc_id
 
-  ingress = {
+  ingress {
     description = "Allow HTTP from anywhere"
     from_port   = 80
     to_port     = 80
@@ -189,12 +189,12 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress = {
-    description    = "To Frontend targets"
-    from_port      = var.frontend_port
-    to_port        = var.frontend_port
-    protocol       = "tcp"
-    security_group = [aws_security_group.frontend_sg.id]
+  egress {
+    description = "To Frontend targets"
+    from_port   = var.frontend_port
+    to_port     = var.frontend_port
+    protocol    = "tcp"
+    cidr_blocks = module.vpc_primary.private_subnets_cidr_blocks
   }
 }
 
@@ -204,26 +204,24 @@ resource "aws_security_group" "frontend_sg" {
   description = "Security Group for Frontend instances in Primary Region"
   vpc_id      = module.vpc_primary.vpc_id
 
-  ingress = {
+  ingress {
     description    = "HTTP from ALB"
     from_port      = var.frontend_port
     to_port        = var.frontend_port
     protocol       = "tcp"
     security_group = [aws_security_group.alb_sg.id]
   }
-}
 
-resource "aws_vpc_security_group_egress_rule" "frontend_to_backend" {
-  count = var.backend_sg_id == null ? 0 : 1
-
-  security_group_id            = aws_security_group.frontend_sg.id
-  referenced_security_group_id = var.backend_sg_id
-
-  ip_protocol = "tcp"
-  from_port   = var.backend_port
-  to_port     = var.backend_port
-
-  description = "Allow Frontend to Backend communication"
+  dynamic "egress" {
+    for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
+    content {
+      description     = "Permite la comunicación desde el Frontend hacia el Backend"
+      from_port       = var.backend_port
+      to_port         = var.backend_port
+      protocol        = "tcp"
+      security_groups = [egress.value]
+    }
+  }
 }
 
 # ALB (Public) + Target Group + Listener
