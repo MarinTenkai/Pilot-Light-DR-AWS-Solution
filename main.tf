@@ -163,19 +163,8 @@ locals {
   )
 }
 
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"] # Amazon Linux 2023
-  }
-
-  filter {
-    name   = "state"
-    values = ["available"]
-  }
+data "aws_ssm_parameter" "amazon_linux_2_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
 ## Security Group for Compute Resources
@@ -335,7 +324,7 @@ module "autoscaling" {
   launch_template_name        = "${var.project_name}-${terraform.workspace}-frontend-lt"
   launch_template_description = "Frontend LT"
 
-  image_id      = data.aws_ami.amazon_linux.id
+  image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.value
   instance_type = var.frontend_instance_type
 
   #key pair por defecto
