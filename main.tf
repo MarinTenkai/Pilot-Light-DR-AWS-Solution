@@ -264,7 +264,7 @@ locals {
 resource "aws_security_group" "alb_sg" {
   name        = "${terraform.workspace}-alb-sg"
   description = "SG para ALB publico (entrada desde internet)"
-  vpc_id      = module.vpc_primary.default_vpc_id
+  vpc_id      = module.vpc_primary.vpc_id
 
   tags = merge(local.common_tags, {
     name = "${terraform.workspace}alb-sg"
