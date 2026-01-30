@@ -134,6 +134,11 @@ variable "frontend_healthcheck_path" {
   default = "/"
 }
 
+variable "backend_healthcheck_path" {
+  type    = string
+  default = "/"
+}
+
 # Puerto del servicio backend al que el Frontend debe poder conectarse.
 variable "backend_port" {
   description = "Puerto del servicio backend al que el Frontend debe poder conectarse."

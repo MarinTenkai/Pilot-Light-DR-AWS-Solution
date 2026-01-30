@@ -592,3 +592,54 @@ module "autoscaling" {
 
 #### Recursos de la capa backend de la región primaria ####
 
+## ALB interno para Backend
+
+module "backend_alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "10.5.0"
+
+  name               = "${terraform.workspace}-backend-alb"
+  load_balancer_type = "application"
+  internal           = true
+
+  vpc_id          = module.vpc_primary.vpc_id
+  subnets         = module.vpc_primary.private_subnets
+  security_groups = [aws_security_group.backend_alb_sg.id]
+
+  enable_deletion_protection = false
+
+  listeners = {
+    http_backend = {
+      port     = var.backend_port
+      protocol = "HTTP"
+
+      forward = {
+        target_group_key = "backend"
+      }
+    }
+  }
+
+  target_groups = {
+    backend = {
+      name_prefix          = "tg-"
+      protocol             = "HTTP"
+      port                 = var.backend_port
+      target_type          = "instance"
+      deregistration_delay = 10
+
+      create_attachment = false
+
+      health_check = {
+        enabled             = true
+        path                = var.backend_healthcheck_path
+        protocol            = "HTTP"
+        matcher             = "200-399"
+        interval            = 30
+        timeout             = 5
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+      }
+    }
+  }
+}
+
