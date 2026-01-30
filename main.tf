@@ -245,198 +245,230 @@ resource "aws_vpc_endpoint" "ssm" {
   tags = local.common_tags
 }
 
-#### Grupos de seguridad para los recursos de la región primaria ####
+#### Grupos de seguridad y reglas para los recursos de la región primaria ####
 
-## Grupos de seguridad de la capa Frontend de la región primaria
 
-# SG para VPC Endpoints SSM
-resource "aws_security_group" "vpce_sg" {
-  name        = "${terraform.workspace}-vpce-sg"
-  description = "SG para VPC Endpoints SSM"
-  vpc_id      = module.vpc_primary.vpc_id
+## Recursos locales
+locals {
+  vpc_resolver_cidr = "${cidrhost(var.vpc_primary_cidr, 2)}/32"
 
-  ingress {
-    description     = "HTTPS desde instancias frontend hacia VPC Endpoint"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
+  app_instance_sg = {
+    frontend = aws_security_group.frontend_sg.id
+    backend  = aws_security_group.backend_sg.id
   }
-
-  #Esto es realmente necesario? revisar.
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.common_tags
 }
 
-# SG del ALB (Public) para la capa Frontend de la región primaria
+## Grupos de seguridad para los recursos de la región primaria
+
+# SG del ALB público (Internet -> ALB)
 resource "aws_security_group" "alb_sg" {
   name        = "${terraform.workspace}-alb-sg"
-  description = "Security Group for ALB in Primary Region"
-  vpc_id      = module.vpc_primary.vpc_id
-
-  #puertos hardcodeados y además no entiendo porque permito http pero no https.
-  ingress {
-    description = "Permitir el tráfico entrante desde internet hasta el ALB público"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  #Cambiar esto por un aws_security_group_rule para evitar usar cidr_blocks y poder usar security_groups en su lugar sin crear dependencias circulares
-  egress {
-    description = "Permite el tráfico desde el ALB público hacia las instancias frontend"
-    from_port   = var.frontend_port
-    to_port     = var.frontend_port
-    protocol    = "tcp"
-    cidr_blocks = module.vpc_primary.private_subnets_cidr_blocks #Me gustaría cambiar esto por un security_groups
-  }
-}
-
-# SG de las instancias Frontend (Private) de la región primaria
-resource "aws_security_group" "frontend_sg" {
-  name        = "${terraform.workspace}-frontend-sg"
-  description = "Security Group for Frontend instances in Primary Region"
-  vpc_id      = module.vpc_primary.vpc_id
-
-  ingress {
-    description     = "Permitir tráfico desde el ALB público hacia las instancias en el frontend"
-    from_port       = var.frontend_port
-    to_port         = var.frontend_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
-  }
-
-  egress {
-    description = "DNS UPD to VPC resolver"
-    from_port   = 53
-    to_port     = 53
-    protocol    = "udp"
-    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
-  }
-
-  egress {
-    description = "DNS TCP to VPC resolver"
-    from_port   = 53
-    to_port     = 53
-    protocol    = "tcp"
-    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
-  }
-
-  #No entiendo este egress Revisar. Tanto este egress como el siguiente aseguran permitir la salida de ssm sobre http via nat gateway cosa que no tiene sentido ya que ssm usa privatelink no nat.
-  egress {
-    description = "SSM sobre HTTPS via NAT Gateway"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  #No entiendo este egress REVISAR
-  egress {
-    description = "SSM sobre HTTP via NAT Gateway"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-## Grupos de seguridad de la capa Backend de la región primaria
-
-resource "aws_security_group" "backend_sg" {
-  name        = "${terraform.workspace}-backend-sg"
-  description = "Security Group para las instancias Backend en la región primaria"
-  vpc_id      = module.vpc_primary.vpc_id
-
-  egress {
-    description = "DNS UDP para VPC resolver"
-    from_port   = 53
-    to_port     = 53
-    protocol    = "udp"
-    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
-  }
-
-  egress {
-    description = "DNS TCP para VPC resolver"
-    from_port   = 53
-    to_port     = 53
-    protocol    = "tcp"
-    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
-  }
-
-  #No entiendo este egress. por qué el backend debe salir a internet?
-  egress {
-    description = "HTTPS egress"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  description = "SG para ALB publico (entrada desde internet)"
+  vpc_id      = module.vpc_primary.default_vpc_id
 
   tags = merge(local.common_tags, {
-    name = "${terraform.workspace}-backend-sg"
-    Tier = "Backend"
+    name = "${terraform.workspace}alb-sg"
+    Tier = "Public"
   })
 }
 
-resource "aws_security_group" "backend_alb_sg" {
-  name        = "${terraform.workspace}-backend-alb-sg"
-  description = "Grupo de Seguridad para el ALB del Backend en la región primaria"
+# SG instancias Frontend (ALB publico -> Frontend)
+resource "aws_security_group" "frontend_sg" {
+  name        = "${terraform.workspace}-frontend-sg"
+  description = "SG para instancias Frontend (solo desde ALB publico)"
   vpc_id      = module.vpc_primary.vpc_id
 
-  ingress {
-    description     = "Permitir trafico desde las instancias frontend hacia el ALB interno"
-    from_port       = var.backend_port
-    to_port         = var.backend_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
-  }
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-frontend-sg"
+    Tier = "Frontend"
+  })
+}
 
-  #Es esto realmente necesario? El hecho de que en backend_sg se permita el tráfico desde el ALB interno no es suficiente para permitir la comunicación entre ALB interno e instancias backend?
-  egress {
-    description     = "Permite el tráfico desde las instancias del backend hacia el ALB."
-    from_port       = var.backend_port
-    to_port         = var.backend_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.backend_sg.id]
-  }
+# SG del ALB interno (Frontend -> ALB interno)
+resource "aws_security_group" "backend_alb_sg" {
+  name        = "${terraform.workspace}-backend-alb-sg"
+  description = "SG para ALB interno del Backend (solo desde Frontend)"
+  vpc_id      = module.vpc_primary.vpc_id
 
   tags = merge(local.common_tags, {
     name = "${terraform.workspace}-backend-alb-sg"
-    Tier = "Backend"
+    tier = "Backend"
   })
 }
 
+# SG instancias Backend (ALB interno -> Backend)
+resource "aws_security_group" "backend_sg" {
+  name        = "${terraform.workspace}-backend-sg"
+  description = "SG para instancias Backend (solo desde ALB interno)"
+  vpc_id      = module.vpc_primary.vpc_id
 
-##
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-backend-sg"
+    tier = "Backend"
+  })
+}
 
-# Frontend -> Backend ALB (egress)
+# SG para VPC Endpoints de SSM (Frontend/Backend -> VPCE)
+resource "aws_security_group" "vpce_sg" {
+  name        = "${terraform.workspace}-vpce-sg"
+  description = "SG para interface Endpoints de SSM (443 desde Frontend/Backend)"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-vpce-sg"
+    tier = "Private"
+  })
+}
+
+## Reglas para security groups
+
+# Reglas Internet <-> ALB publico
+resource "aws_security_group_rule" "alb_ingress_http" {
+  type              = "ingress"
+  security_group_id = aws_security_group.alb_sg.id
+  description       = "Internet hacia ALB publico (HTTP)"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "alb_ingress_https" {
+  type              = "ingress"
+  security_group_id = aws_security_group.alb_sg.id
+  description       = "Internet hacia ALB publico (HTTPS)"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# Reglas ALB publico <-> Frontend
+resource "aws_security_group_rule" "alb_egress_to_frontend" {
+  type                     = "egress"
+  security_group_id        = aws_security_group.alb_sg.id
+  description              = "ALB publico hacia Frontend"
+  from_port                = var.frontend_port
+  to_port                  = var.frontend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.frontend_sg.id
+}
+
+resource "aws_security_group_rule" "frontend_ingress_from_alb" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.frontend_sg.id
+  description              = "ALB publico hacia Frontend"
+  from_port                = var.frontend_port
+  to_port                  = var.frontend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.alb_sg.id
+}
+
+# Reglas Frontend <-> ALB interno (Backend ALB)
 resource "aws_security_group_rule" "frontend_egress_to_backend_alb" {
-  description              = "Permite al frontend llamar al backend a traves del ALB interno"
   type                     = "egress"
   security_group_id        = aws_security_group.frontend_sg.id
+  description              = "Frontend hacia ALB interno (Backend)"
   from_port                = var.backend_port
   to_port                  = var.backend_port
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.backend_alb_sg.id
 }
 
-# Backend ALB -> Backend instances (ingress en backend_sg)
+resource "aws_security_group_rule" "backend_alb_ingress_from_frontend" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.backend_alb_sg.id
+  description              = "Frontend hacia ALB interno"
+  from_port                = var.backend_port
+  to_port                  = var.backend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.frontend_sg.id
+}
+
+# Reglas ALB interno <-> instancias
+resource "aws_security_group_rule" "backend_alb_egress_to_backend" {
+  type                     = "egress"
+  security_group_id        = aws_security_group.backend_alb_sg.id
+  description              = "ALB interno hacia Backend"
+  from_port                = var.backend_port
+  to_port                  = var.backend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.backend_sg.id
+}
+
 resource "aws_security_group_rule" "backend_ingress_from_backend_alb" {
-  description              = "Permite el trafico desde el ALB interno hacia las instancias en el backend"
   type                     = "ingress"
   security_group_id        = aws_security_group.backend_sg.id
+  description              = "ALB interno hacia Backend"
   from_port                = var.backend_port
   to_port                  = var.backend_port
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.backend_alb_sg.id
+}
+
+# Reglas SSM via interfaces Endpoints (443)
+# Egress desde instancias -> VPCE (SSM)
+resource "aws_security_group_rule" "app_egress_to_vpce_443" {
+  for_each = local.app_instance_sg
+
+  type                     = "egress"
+  security_group_id        = each.value
+  description              = "Instancias ${each.key} hacia VPCE SSM (443)"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.vpce_sg.id
+}
+
+# Ingress en VPCE desde instancias
+resource "aws_security_group_rule" "vpce_ingress_from_apps_443" {
+  for_each = local.app_instance_sg
+
+  type                     = "ingress"
+  security_group_id        = aws_security_group.vpce_sg.id
+  description              = "Instancias ${each.key} (443) hacia VPCE SSM"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = each.value
+}
+
+# Reglas DNS (53) desde instancias
+resource "aws_security_group_rule" "app_egress_dns_upd" {
+  for_each = local.app_instance_sg
+
+  type              = "egress"
+  security_group_id = each.value
+  description       = "Instancias ${each.key} hacia DNS UDP (VPC resolver)"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "udp"
+  cidr_blocks       = [local.vpc_resolver_cidr]
+}
+
+resource "aws_security_group_rule" "app_egress_dns_tcp" {
+  for_each = local.app_instance_sg
+
+  type              = "egress"
+  security_group_id = each.value
+  description       = "Instancias ${each.key} hacia DNS TCP (VPC resolver)"
+  from_port         = 53
+  to_port           = 53
+  protocol          = "tcp"
+  cidr_blocks       = [local.vpc_resolver_cidr]
+}
+
+# Reglas Egress a Internet (via NAT) para dependencias/repos externos
+resource "aws_security_group_rule" "app_egress_https_internet" {
+  for_each = local.app_instance_sg
+
+  type              = "egress"
+  security_group_id = each.value
+  description       = "Instancias ${each.key} hacia Internet HTTPS (via NAT)"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 #### Recursos de la capa Frontend de la región primaria ####

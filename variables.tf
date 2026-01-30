@@ -134,9 +134,6 @@ variable "frontend_healthcheck_path" {
   default = "/"
 }
 
-# Security Group ID del backend. Cuando sea null, no se crea la regla de egress Frontend->Backend
-
-
 # Puerto del servicio backend al que el Frontend debe poder conectarse.
 variable "backend_port" {
   description = "Puerto del servicio backend al que el Frontend debe poder conectarse."
