@@ -116,12 +116,6 @@ variable "frontend_healthcheck_path" {
   default = "/"
 }
 
-variable "frontend_user_data_base64" {
-  type        = string
-  description = "User data en BASE64 para instancias frontend"
-  default     = null
-}
-
 variable "backend_sg_id" {
   description = "Security Group ID del backend. Cuando sea null, no se crea la regla de egress Frontend->Backend"
   type        = string

@@ -149,9 +149,13 @@ resource "aws_s3_bucket_policy" "flow_logs" {
 locals {
   frontend_user_data = base64encode(<<-EOF
     #!/bin/bash
-    sudo rm -rf /tmp
-    sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp
-    sudo sh /tmp/assets/setup-web.sh
+    set -euxo pipefail
+
+    sudo yum -y install git || sudo dnf -y install git || true
+
+    sudo rm -rf /tmp/demo-terraform-101
+    sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp/demo-terraform-101
+    sudo sh /tmp/demo-terraform-101/assets/setup-web.sh
   EOF
   )
 }
@@ -208,6 +212,22 @@ resource "aws_security_group" "frontend_sg" {
     to_port         = var.frontend_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    description = "DNS UPD to VPC resolver"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
+  }
+
+  egress {
+    description = "DNS TCP to VPC resolver"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "tcp"
+    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
   }
 
   egress {
@@ -325,7 +345,7 @@ module "autoscaling" {
   security_groups = [aws_security_group.frontend_sg.id]
 
   # user data
-  user_data = var.frontend_user_data_base64
+  user_data = local.frontend_user_data
 
   # Etiquetas en instancias
   tags = merge(local.common_tags, {
