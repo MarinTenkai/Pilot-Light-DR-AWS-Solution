@@ -134,6 +134,32 @@ variable "frontend_healthcheck_path" {
   default = "/"
 }
 
+## Backend variables
+
+# Tipo de instancia para las instancias Frontend
+variable "backend_instance_type" {
+  type    = string
+  default = "t3.micro"
+}
+
+# Auto Scaling Group Variables para Frontend
+variable "backend_min_size" {
+  type    = number
+  default = 1
+}
+
+# Auto Scaling max size para Frontend
+variable "backend_max_size" {
+  type    = number
+  default = 2
+}
+
+# Auto Scaling desired capacity para Frontend
+variable "backend_desired_capacity" {
+  type    = number
+  default = 1
+}
+
 variable "backend_healthcheck_path" {
   type    = string
   default = "/"
@@ -145,7 +171,6 @@ variable "backend_port" {
   type        = number
   default     = 8080
 }
-
 
 #### Secondary Region Variables ####
 

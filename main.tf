@@ -643,3 +643,42 @@ module "backend_alb" {
   }
 }
 
+## Backend ASG (Application Servers)
+module "autoscaling_backend" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "9.1.0"
+
+  name = "${terraform.workspace}-backend-asg"
+
+  vpc_zone_identifier = module.vpc_primary.private_subnets
+
+  min_size         = var.backend_min_size
+  max_size         = var.backend_max_size
+  desired_capacity = var.backend_desired_capacity
+
+  health_check_type         = "ELB"
+  health_check_grace_period = 180
+
+  traffic_source_attachments = {
+    backend = {
+      traffic_source_identifier = module.backend_alb.target_groups["backend"].arn
+      traffic_source_type       = "elbv2"
+    }
+  }
+
+  launch_template_name        = "${terraform.workspace}-backend-lt"
+  launch_template_description = "Backend LT"
+
+  image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.value
+  instance_type = var.backend_instance_type
+
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_ssm_profile.name
+
+  security_groups = [aws_security_group.backend_sg.id]
+  user_data       = local.backend_user_data
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-backend-instance"
+    tier = "Backend"
+  })
+}

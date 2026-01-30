@@ -40,3 +40,8 @@ output "frontend_primary_asg_name" {
   value       = module.autoscaling.autoscaling_group_name
   description = "Nombre del ASG del frontend"
 }
+
+output "backend_alb_dns_name" {
+  value       = module.backend_alb.dns_name
+  description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
+}
