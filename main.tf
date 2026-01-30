@@ -149,16 +149,32 @@ resource "aws_s3_bucket_policy" "flow_logs" {
 
 #Compute resources
 
+# locals {
+#   frontend_user_data = base64encode(<<-EOF
+#     #!/bin/bash
+#     set -euxo pipefail
+
+#     sudo yum -y install git || sudo dnf -y install git || true
+
+#     sudo rm -rf /tmp/demo-terraform-101
+#     sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp/demo-terraform-101
+#     sudo sh /tmp/demo-terraform-101/assets/setup-web.sh
+#   EOF
+#   )
+# }
+
 locals {
   frontend_user_data = base64encode(<<-EOF
     #!/bin/bash
     set -euxo pipefail
 
-    sudo yum -y install git || sudo dnf -y install git || true
+    mkdir -p /var/www/html
+    cat > /var/www/html/index.html <<'HTML'
+    <h1>OK - Instancia responde</h1>
+    <p>Esta es una página de prueba servida desde la instancia Frontend.</p>
+    HTML
 
-    sudo rm -rf /tmp/demo-terraform-101
-    sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp/demo-terraform-101
-    sudo sh /tmp/demo-terraform-101/assets/setup-web.sh
+    nohup python3 -m http.server 80 --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
   EOF
   )
 }
