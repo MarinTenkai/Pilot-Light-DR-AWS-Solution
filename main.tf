@@ -89,6 +89,9 @@ module "s3-bucket" {
 
   bucket = "${var.project_name}-${terraform.workspace}-vpc-flow-logs"
 
+  #Parámetro para entornos dev/test comentar o eliminar en producción para evitar eliminaciones accidentales
+  force_destroy = true
+
   # Seguridad base
   block_public_acls       = true
   block_public_policy     = true
