@@ -149,11 +149,9 @@ resource "aws_s3_bucket_policy" "flow_logs" {
 locals {
   frontend_user_data = base64encode(<<-EOF
     #!/bin/bash
-    dnf -y update || true
-    dnf -y install nginx || true
-    echo "frontend-ok" > /usr/share/nginx/html/index.html
-    systemctl enable nginx
-    systemctl start nginx
+    sudo rm -rf /tmp
+    sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp
+    sudo sh /tmp/assets/setup-web.sh
   EOF
   )
 }
@@ -310,7 +308,7 @@ module "autoscaling" {
   instance_type = var.frontend_instance_type
 
   # Sin key pair por defecto
-  key_name = var.key_name
+  key_name = aws_key_pair.generated.key_name
 
   # SG de las instancias
   security_groups = [aws_security_group.frontend_sg.id]
@@ -323,4 +321,25 @@ module "autoscaling" {
     Name = "${var.project_name}-${terraform.workspace}-frontend-instance"
     Tier = "Frontend"
   })
+}
+
+# Seguridad
+
+#TLS for generating SSH key pair
+resource "tls_private_key" "generated" {
+  algorithm = "RSA"
+}
+
+resource "local_file" "private_key_pem" {
+  content  = tls_private_key.generated.private_key_pem
+  filename = "MyAWSKey.pem"
+}
+
+resource "aws_key_pair" "generated" {
+  key_name   = "MyAWSKey"
+  public_key = tls_private_key.generated.public_key_openssh
+
+  lifecycle {
+    ignore_changes = [key_name]
+  }
 }
