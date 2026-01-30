@@ -389,3 +389,42 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   name = "${terraform.workspace}-ec2-ssm-profile"
   role = aws_iam_role.ec2_ssm_role.name
 }
+
+resource "aws_security_group" "vpce_sg" {
+  name        = "${terraform.workspace}-vpce-sg"
+  description = "SG para VPC Endpoints SSM"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress {
+    description = "HTTPS desde instancias frontend hacia VPC Endpoint"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [module.aws_security_group.frontend_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = local.common_tags
+}
+
+locals {
+  ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
+}
+
+resource "aws_vpc_endpoint" "ssm" {
+  for_each            = local.ssm_vpce_services
+  vpc_id              = module.vpc_primary.vpc_id
+  service_name        = "com.amazonaws.${var.primary_region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc_primary.private_subnets
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+
+  tags = local.common_tags
+}
