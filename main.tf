@@ -289,8 +289,9 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  #Cambiar esto por un aws_security_group_rule para evitar usar cidr_blocks y poder usar security_groups en su lugar sin crear dependencias circulares
   egress {
-    description = "To Frontend targets"
+    description = "Permite el tráfico desde el ALB público hacia las instancias frontend"
     from_port   = var.frontend_port
     to_port     = var.frontend_port
     protocol    = "tcp"
@@ -328,6 +329,7 @@ resource "aws_security_group" "frontend_sg" {
     cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
   }
 
+  #No entiendo este egress Revisar. Tanto este egress como el siguiente aseguran permitir la salida de ssm sobre http via nat gateway cosa que no tiene sentido ya que ssm usa privatelink no nat.
   egress {
     description = "SSM sobre HTTPS via NAT Gateway"
     from_port   = 443
@@ -397,8 +399,9 @@ resource "aws_security_group" "backend_alb_sg" {
     security_groups = [aws_security_group.frontend_sg.id]
   }
 
+  #Es esto realmente necesario? El hecho de que en backend_sg se permita el tráfico desde el ALB interno no es suficiente para permitir la comunicación entre ALB interno e instancias backend?
   egress {
-    description     = "Egress al Backend targets"
+    description     = "Permite el tráfico desde las instancias del backend hacia el ALB."
     from_port       = var.backend_port
     to_port         = var.backend_port
     protocol        = "tcp"
