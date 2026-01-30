@@ -37,7 +37,7 @@ module "s3-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.10.0"
 
-  bucket = "${var.project_name}-${terraform.workspace}-vpc-flow-logs"
+  bucket = "${terraform.workspace}-vpc-flow-logs"
 
   #Parámetro para entornos dev/test comentar o eliminar en producción para evitar eliminaciones accidentales
   force_destroy = true
@@ -100,6 +100,11 @@ resource "aws_s3_bucket_policy" "flow_logs" {
 
 ## Recursos de computación comunes para las capas frontend y backend
 
+# AMI para instancias EC2 (Amazon Linux 2)
+data "aws_ssm_parameter" "amazon_linux_2_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
 # User Data para instancias Frontend
 locals {
   frontend_user_data = base64encode(<<-EOF
@@ -112,14 +117,28 @@ locals {
     <p>Esta es una página de prueba servida desde la instancia Frontend.</p>
     HTML
 
-    nohup python3 -m http.server 80 --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
+    nohup python3 -m http.server ${var.frontend_port} --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
   EOF
   )
 }
 
-# AMI para instancias EC2 (Amazon Linux 2)
-data "aws_ssm_parameter" "amazon_linux_2_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+# User Data para instancias Backend
+locals {
+
+  backend_user_data = base64encode(<<-EOF
+    #!/bin/bash
+    set -euxo pipefail
+
+    mkdir -p /var/www/backend
+
+    cat > /var/www/backend/index.html <<'HTML'
+    <h1>OK - Backend Instance</h1>
+    <p>Esta es una página de prueba servida desde la instancia Backend (Application Server).</p>
+    HTML
+
+    nohup python3 -m http.server ${var.backend_port} --directory /var/www/backend >/var/log/backend-server.log 2>&1 &
+  EOF
+  )
 }
 
 ## SSM - IAM Role y Perfil de Instancia para Instancias EC2
@@ -166,7 +185,7 @@ module "vpc_primary" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
 
-  name = "${var.project_name}-${terraform.workspace}-primary"
+  name = "${terraform.workspace}-primary"
   cidr = var.vpc_primary_cidr
   azs  = local.azs
 
@@ -256,7 +275,7 @@ resource "aws_security_group" "vpce_sg" {
 
 # SG del ALB (Public) para la capa Frontend de la región primaria
 resource "aws_security_group" "alb_sg" {
-  name        = "${var.project_name}-${terraform.workspace}-alb-sg"
+  name        = "${terraform.workspace}-alb-sg"
   description = "Security Group for ALB in Primary Region"
   vpc_id      = module.vpc_primary.vpc_id
 
@@ -279,7 +298,7 @@ resource "aws_security_group" "alb_sg" {
 
 # SG de las instancias Frontend (Private) de la región primaria
 resource "aws_security_group" "frontend_sg" {
-  name        = "${var.project_name}-${terraform.workspace}-frontend-sg"
+  name        = "${terraform.workspace}-frontend-sg"
   description = "Security Group for Frontend instances in Primary Region"
   vpc_id      = module.vpc_primary.vpc_id
 
@@ -323,6 +342,14 @@ resource "aws_security_group" "frontend_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  egress {
+    description     = "Permitir al frontend llamar al backend a traves del ALB interno"
+    from_port       = var.backend_port
+    to_port         = var.backend_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.backend_alb_sg.id]
+  }
+
   dynamic "egress" {
     for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
     content {
@@ -333,6 +360,78 @@ resource "aws_security_group" "frontend_sg" {
       security_groups = [egress.value]
     }
   }
+}
+
+## Grupos de seguridad de la capa Backend de la región primaria
+
+resource "aws_security_group" "backend_sg" {
+  name        = "${terraform.workspace}-backend-sg"
+  description = "Security Group para las instancias Backend en la región primaria"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress {
+    description     = "Permitir el trafico interno del backend desde el ALB del backend"
+    from_port       = var.backend_port
+    to_port         = var.backend_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.backend_alb_sg.id]
+  }
+
+  egress {
+    description = "DNS UDP para VPC resolver"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
+  }
+
+  egress {
+    description = "DNS TCP para VPC resolver"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "tcp"
+    cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
+  }
+
+  egress {
+    description = "HTTPS egress"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-backend-sg"
+    Tier = "Backend"
+  })
+}
+
+resource "aws_security_group" "backend_alb_sg" {
+  name        = "${terraform.workspace}-backend-alb-sg"
+  description = "Grupo de Seguridad para el ALB del Backend en la región primaria"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress {
+    description     = "Permitir HTTP desde las instancias Frontend"
+    from_port       = var.backend_port
+    to_port         = var.backend_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.frontend_sg.id]
+  }
+
+  egress {
+    description     = "Egress al Backend targets"
+    from_port       = var.backend_port
+    to_port         = var.backend_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.backend_sg.id]
+  }
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-backend-alb-sg"
+    Tier = "Backend"
+  })
 }
 
 #### Recursos de la capa Frontend de la región primaria ####
@@ -394,7 +493,7 @@ module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.1.0"
 
-  name = "${var.project_name}-${terraform.workspace}-frontend-asg"
+  name = "${terraform.workspace}-frontend-asg"
 
   # Subnets privadas (2 AZs)
   vpc_zone_identifier = module.vpc_primary.private_subnets
@@ -416,7 +515,7 @@ module "autoscaling" {
   }
 
   # Launch Template para las instancias Frontend
-  launch_template_name        = "${var.project_name}-${terraform.workspace}-frontend-lt"
+  launch_template_name        = "${terraform.workspace}-frontend-lt"
   launch_template_description = "Frontend LT"
 
   image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.value
@@ -436,7 +535,7 @@ module "autoscaling" {
 
   # Etiquetas en instancias
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-${terraform.workspace}-frontend-instance"
+    Name = "${terraform.workspace}-frontend-instance"
     Tier = "Frontend"
   })
 }
@@ -453,3 +552,6 @@ module "autoscaling" {
 #     ManagedBy = "Marin.Tenkai"
 #   })
 # }
+
+#### Recursos de la capa backend de la región primaria ####
+
