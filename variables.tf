@@ -49,13 +49,13 @@ variable "flow_logs_s3_prefix" {
 variable "aurora_engine" {
   description = "Motor Aurora (aurora-postgresql o aurora-mysql)"
   type        = string
-  default     = "aurora-mysql"
+  default     = "aurora-postgresql"
 }
 
 variable "aurora_port" {
   description = "Puerto de la BD (5432 para aurora-postgresql, 3306 para aurora-mysql)"
   type        = number
-  default     = 3306
+  default     = 5432
 }
 
 variable "aurora_database_name" {
