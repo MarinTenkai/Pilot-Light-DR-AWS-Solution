@@ -1,1 +1,4 @@
-.
+Error: creating RDS Cluster (devops-aws-pldr-dev-aurora): operation error RDS: CreateDBCluster, https response error StatusCode: 400, RequestID: 44370ba8-a88c-4bcd-8236-51443ecdb64d, api error FreeTierRestrictionError: To use Aurora clusters with free plan accounts you need to set WithExpressConfiguration. To remove all limitations, upgrade your account plan.
+with aws_rds_cluster.aurora
+on main.tf line 75, in resource "aws_rds_cluster" "aurora":
+resource "aws_rds_cluster" "aurora" {
