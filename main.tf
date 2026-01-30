@@ -263,6 +263,7 @@ resource "aws_security_group" "vpce_sg" {
     security_groups = [aws_security_group.frontend_sg.id]
   }
 
+  #Esto es realmente necesario? revisar.
   egress {
     from_port   = 0
     to_port     = 0
@@ -279,8 +280,9 @@ resource "aws_security_group" "alb_sg" {
   description = "Security Group for ALB in Primary Region"
   vpc_id      = module.vpc_primary.vpc_id
 
+  #puertos hardcodeados y además no entiendo porque permito http pero no https.
   ingress {
-    description = "Allow HTTP from anywhere"
+    description = "Permitir el tráfico entrante desde internet hasta el ALB público"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -292,7 +294,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = var.frontend_port
     to_port     = var.frontend_port
     protocol    = "tcp"
-    cidr_blocks = module.vpc_primary.private_subnets_cidr_blocks
+    cidr_blocks = module.vpc_primary.private_subnets_cidr_blocks #Me gustaría cambiar esto por un security_groups
   }
 }
 
@@ -303,7 +305,7 @@ resource "aws_security_group" "frontend_sg" {
   vpc_id      = module.vpc_primary.vpc_id
 
   ingress {
-    description     = "HTTP from ALB"
+    description     = "Permitir tráfico desde el ALB público hacia las instancias en el frontend"
     from_port       = var.frontend_port
     to_port         = var.frontend_port
     protocol        = "tcp"
@@ -334,23 +336,13 @@ resource "aws_security_group" "frontend_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  #No entiendo este egress REVISAR
   egress {
     description = "SSM sobre HTTP via NAT Gateway"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  dynamic "egress" {
-    for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
-    content {
-      description     = "Permite la comunicación desde el Frontend hacia el Backend"
-      from_port       = var.backend_port
-      to_port         = var.backend_port
-      protocol        = "tcp"
-      security_groups = [egress.value]
-    }
   }
 }
 
@@ -377,6 +369,7 @@ resource "aws_security_group" "backend_sg" {
     cidr_blocks = ["${cidrhost(var.vpc_primary_cidr, 2)}/32"]
   }
 
+  #No entiendo este egress. por qué el backend debe salir a internet?
   egress {
     description = "HTTPS egress"
     from_port   = 443
@@ -397,7 +390,7 @@ resource "aws_security_group" "backend_alb_sg" {
   vpc_id      = module.vpc_primary.vpc_id
 
   ingress {
-    description     = "Permitir HTTP desde las instancias Frontend"
+    description     = "Permitir trafico desde las instancias frontend hacia el ALB interno"
     from_port       = var.backend_port
     to_port         = var.backend_port
     protocol        = "tcp"
@@ -434,7 +427,7 @@ resource "aws_security_group_rule" "frontend_egress_to_backend_alb" {
 
 # Backend ALB -> Backend instances (ingress en backend_sg)
 resource "aws_security_group_rule" "backend_ingress_from_backend_alb" {
-  description              = "Permite el trafico backend desde el ALB interno"
+  description              = "Permite el trafico desde el ALB interno hacia las instancias en el backend"
   type                     = "ingress"
   security_group_id        = aws_security_group.backend_sg.id
   from_port                = var.backend_port
