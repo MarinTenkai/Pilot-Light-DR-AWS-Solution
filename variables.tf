@@ -133,12 +133,6 @@ variable "backend_port" {
   type        = number
   default     = 8080
 }
-
-variable "key_name" {
-  type        = string
-  description = "Par de claves para SHH (Desactivado por defecto)"
-  default     = null
-}
 ##Secondary Region Variables##
 
 variable "secondary_region" {
