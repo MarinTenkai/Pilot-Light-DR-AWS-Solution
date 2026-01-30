@@ -210,7 +210,7 @@ resource "aws_security_group" "frontend_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
-  egress = {
+  egress {
     description = "SSM sobre HTTPS via NAT Gateway"
     from_port   = 443
     to_port     = 443
