@@ -404,11 +404,11 @@ resource "aws_security_group" "vpce_sg" {
   vpc_id      = module.vpc_primary.vpc_id
 
   ingress {
-    description = "HTTPS desde instancias frontend hacia VPC Endpoint"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [module.aws_security_group.frontend_sg.id]
+    description     = "HTTPS desde instancias frontend hacia VPC Endpoint"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.frontend_sg.id]
   }
 
   egress {
