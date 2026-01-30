@@ -342,14 +342,6 @@ resource "aws_security_group" "frontend_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress {
-    description     = "Permitir al frontend llamar al backend a traves del ALB interno"
-    from_port       = var.backend_port
-    to_port         = var.backend_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.backend_alb_sg.id]
-  }
-
   dynamic "egress" {
     for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
     content {
@@ -368,14 +360,6 @@ resource "aws_security_group" "backend_sg" {
   name        = "${terraform.workspace}-backend-sg"
   description = "Security Group para las instancias Backend en la región primaria"
   vpc_id      = module.vpc_primary.vpc_id
-
-  ingress {
-    description     = "Permitir el trafico interno del backend desde el ALB del backend"
-    from_port       = var.backend_port
-    to_port         = var.backend_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.backend_alb_sg.id]
-  }
 
   egress {
     description = "DNS UDP para VPC resolver"
@@ -432,6 +416,31 @@ resource "aws_security_group" "backend_alb_sg" {
     name = "${terraform.workspace}-backend-alb-sg"
     Tier = "Backend"
   })
+}
+
+
+##
+
+# Frontend -> Backend ALB (egress)
+resource "aws_security_group_rule" "frontend_egress_to_backend_alb" {
+  description              = "Permite al frontend llamar al backend a traves del ALB interno"
+  type                     = "egress"
+  security_group_id        = aws_security_group.frontend_sg.id
+  from_port                = var.backend_port
+  to_port                  = var.backend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.backend_alb_sg.id
+}
+
+# Backend ALB -> Backend instances (ingress en backend_sg)
+resource "aws_security_group_rule" "backend_ingress_from_backend_alb" {
+  description              = "Permite el trafico backend desde el ALB interno"
+  type                     = "ingress"
+  security_group_id        = aws_security_group.backend_sg.id
+  from_port                = var.backend_port
+  to_port                  = var.backend_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.backend_alb_sg.id
 }
 
 #### Recursos de la capa Frontend de la región primaria ####
