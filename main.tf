@@ -210,6 +210,14 @@ resource "aws_security_group" "frontend_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
+  egress = {
+    description = "SSM sobre HTTPS via NAT Gateway"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   dynamic "egress" {
     for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
     content {
@@ -307,8 +315,11 @@ module "autoscaling" {
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = var.frontend_instance_type
 
-  # Sin key pair por defecto
+  #key pair por defecto
   key_name = aws_key_pair.ssh.key_name
+
+  #Asignamos el perfil de instancia SSM
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_ssm_profile.name
 
   # SG de las instancias
   security_groups = [aws_security_group.frontend_sg.id]
@@ -323,10 +334,9 @@ module "autoscaling" {
   })
 }
 
-# Seguridad
+## Seguridad
 
 #TLS SSH key pair
-
 resource "aws_key_pair" "ssh" {
   key_name   = var.key_name
   public_key = file(var.public_key_path)
@@ -335,4 +345,35 @@ resource "aws_key_pair" "ssh" {
     Name      = var.key_name
     ManagedBy = "Marin.Tenkai"
   })
+}
+
+#SSM IAM Role y Perfil de Instancia para Instancias EC2
+
+#Creamos la política de asunción de rol para EC2
+data "aws_iam_policy_document" "ec2_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+#Creamos el rol IAM para EC2
+resource "aws_iam_role" "ec2_ssm_role" {
+  name               = "${terraform.workspace}-ec2-ssm-role"
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+}
+
+#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM creado
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+#Creamos el perfil de instancia IAM para EC2
+resource "aws_iam_instance_profile" "ec2_ssm_profile" {
+  name = "${terraform.workspace}-ec2-ssm-profile"
+  role = aws_iam_role.ec2_ssm_role.name
 }
