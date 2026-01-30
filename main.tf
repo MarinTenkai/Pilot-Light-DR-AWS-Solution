@@ -316,7 +316,7 @@ module "autoscaling" {
   instance_type = var.frontend_instance_type
 
   #key pair por defecto
-  key_name = aws_key_pair.ssh.key_name
+  #key_name = aws_key_pair.ssh.key_name
 
   #Asignamos el perfil de instancia SSM
   iam_instance_profile_name = aws_iam_instance_profile.ec2_ssm_profile.name
