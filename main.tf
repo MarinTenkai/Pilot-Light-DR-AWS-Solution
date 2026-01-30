@@ -230,6 +230,14 @@ resource "aws_security_group" "frontend_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  egress {
+    description = "SSM sobre HTTP via NAT Gateway"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   dynamic "egress" {
     for_each = var.backend_sg_id == null ? [] : [var.backend_sg_id]
     content {
@@ -310,7 +318,7 @@ module "autoscaling" {
 
   # Health checks desde ALB
   health_check_type         = "ELB"
-  health_check_grace_period = 60
+  health_check_grace_period = 180
 
   # Adjunta el ASG al target group del ALB
   traffic_source_attachments = {
