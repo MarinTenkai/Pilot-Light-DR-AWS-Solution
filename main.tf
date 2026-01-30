@@ -308,7 +308,7 @@ module "autoscaling" {
   instance_type = var.frontend_instance_type
 
   # Sin key pair por defecto
-  key_name = aws_key_pair.generated.key_name
+  key_name = aws_key_pair.ssh.key_name
 
   # SG de las instancias
   security_groups = [aws_security_group.frontend_sg.id]
@@ -325,21 +325,14 @@ module "autoscaling" {
 
 # Seguridad
 
-#TLS for generating SSH key pair
-resource "tls_private_key" "generated" {
-  algorithm = "RSA"
-}
+#TLS SSH key pair
 
-resource "local_file" "private_key_pem" {
-  content  = tls_private_key.generated.private_key_pem
-  filename = "MyAWSKey.pem"
-}
+resource "aws_key_pair" "ssh" {
+  key_name   = var.key_name
+  public_key = file(var.public_key_path)
 
-resource "aws_key_pair" "generated" {
-  key_name   = "MyAWSKey"
-  public_key = tls_private_key.generated.public_key_openssh
-
-  lifecycle {
-    ignore_changes = [key_name]
-  }
+  tags = merge(local.common_tags, {
+    Name      = var.key_name
+    ManagedBy = "Marin.Tenkai"
+  })
 }
