@@ -10,7 +10,9 @@ provider "aws" {
   }
 }
 
-#### Regiones y AZs ####
+#### Recursos comunes para la región primaria y secundaria ####
+
+## Regiones y AZs
 
 #Extrae la lista de zonas disponibles en la region seleccionada
 data "aws_region" "current" {}
@@ -28,59 +30,6 @@ locals {
     ManagedBy   = "Terraform"
     RegionRole  = "Primary"
   }
-}
-
-#### VPC primaria ####
-
-module "vpc_primary" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "6.6.0"
-
-  name = "${var.project_name}-${terraform.workspace}-primary"
-  cidr = var.vpc_primary_cidr
-  azs  = local.azs
-
-  # Subnets
-  public_subnets   = var.public_subnets_cidrs_primary
-  private_subnets  = var.private_subnets_cidrs_primary
-  database_subnets = var.database_subnets_cidrs_primary
-
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  # Internet egress
-  enable_nat_gateway = true
-
-  one_nat_gateway_per_az = true
-  single_nat_gateway     = false
-
-  # DB Subnet Group para Autora
-  create_database_subnet_group = true
-
-  # Etiquetas
-  tags = local.common_tags
-
-  # Tags por subnet
-  public_subnet_tags = merge(local.common_tags, {
-  Tier = "Public" })
-
-  private_subnet_tags = merge(local.common_tags, {
-  Tier = "Private-app" })
-
-  database_subnet_tags = merge(local.common_tags, {
-  Tier = "Private-db" })
-}
-
-## VPC primaria Flow Logs para registro de logs de red
-resource "aws_flow_log" "vpc_primary" {
-  vpc_id               = module.vpc_primary.vpc_id
-  traffic_type         = var.flow_logs_traffic_type
-  log_destination_type = "s3"
-  log_destination      = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
-
-  max_aggregation_interval = 600
-
-  depends_on = [aws_s3_bucket_policy.flow_logs]
 }
 
 ## Recursos de S3 Bucket para VPC Flow Logs
@@ -149,9 +98,9 @@ resource "aws_s3_bucket_policy" "flow_logs" {
   })
 }
 
-#### Recursos de computación comunes para las capas frontend y backend ####
+## Recursos de computación comunes para las capas frontend y backend
 
-## User Data para instancias Frontend
+# User Data para instancias Frontend
 locals {
   frontend_user_data = base64encode(<<-EOF
     #!/bin/bash
@@ -168,7 +117,7 @@ locals {
   )
 }
 
-## AMI para instancias EC2 (Amazon Linux 2)
+# AMI para instancias EC2 (Amazon Linux 2)
 data "aws_ssm_parameter" "amazon_linux_2_ami" {
   name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
@@ -209,6 +158,61 @@ locals {
   ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
 }
 
+#### Recursos para la región primaria ####
+
+## VPC primaria
+
+module "vpc_primary" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.6.0"
+
+  name = "${var.project_name}-${terraform.workspace}-primary"
+  cidr = var.vpc_primary_cidr
+  azs  = local.azs
+
+  # Subnets
+  public_subnets   = var.public_subnets_cidrs_primary
+  private_subnets  = var.private_subnets_cidrs_primary
+  database_subnets = var.database_subnets_cidrs_primary
+
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  # Internet egress
+  enable_nat_gateway = true
+
+  one_nat_gateway_per_az = true
+  single_nat_gateway     = false
+
+  # DB Subnet Group para Autora
+  create_database_subnet_group = true
+
+  # Etiquetas
+  tags = local.common_tags
+
+  # Tags por subnet
+  public_subnet_tags = merge(local.common_tags, {
+  Tier = "Public" })
+
+  private_subnet_tags = merge(local.common_tags, {
+  Tier = "Private-app" })
+
+  database_subnet_tags = merge(local.common_tags, {
+  Tier = "Private-db" })
+}
+
+## VPC primaria Flow Logs para registro de logs de red
+resource "aws_flow_log" "vpc_primary" {
+  vpc_id               = module.vpc_primary.vpc_id
+  traffic_type         = var.flow_logs_traffic_type
+  log_destination_type = "s3"
+  log_destination      = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
+
+  max_aggregation_interval = 600
+
+  depends_on = [aws_s3_bucket_policy.flow_logs]
+}
+
 ## VPC Endpoints para SSM
 resource "aws_vpc_endpoint" "ssm" {
   for_each            = local.ssm_vpce_services
@@ -224,7 +228,7 @@ resource "aws_vpc_endpoint" "ssm" {
 
 #### Grupos de seguridad para los recursos de la región primaria ####
 
-## Grupos de seguridad de la capa Frontend
+## Grupos de seguridad de la capa Frontend de la región primaria
 
 # SG para VPC Endpoints SSM
 resource "aws_security_group" "vpce_sg" {
@@ -250,7 +254,7 @@ resource "aws_security_group" "vpce_sg" {
   tags = local.common_tags
 }
 
-# SG del ALB (Public) para la capa Frontend
+# SG del ALB (Public) para la capa Frontend de la región primaria
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-${terraform.workspace}-alb-sg"
   description = "Security Group for ALB in Primary Region"
@@ -273,7 +277,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# SG de las instancias Frontend (Private)
+# SG de las instancias Frontend (Private) de la región primaria
 resource "aws_security_group" "frontend_sg" {
   name        = "${var.project_name}-${terraform.workspace}-frontend-sg"
   description = "Security Group for Frontend instances in Primary Region"
@@ -331,9 +335,9 @@ resource "aws_security_group" "frontend_sg" {
   }
 }
 
-#### Recursos de la capa Frontend ####
+#### Recursos de la capa Frontend de la región primaria ####
 
-## ALB (Public) + Target Group + Listener
+## ALB (Public) + Target Group + Listener, de la región primaria
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
