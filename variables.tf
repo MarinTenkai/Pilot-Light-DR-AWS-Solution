@@ -1,11 +1,13 @@
-##Common Variables (Both Regions)##
+#### Variables comunes para la región primaria y secundaria ####
 
+# Nombre del proyecto
 variable "project_name" {
   description = "Nombre del proyecto (usado para naming y tags)"
   type        = string
   default     = "pilot-light-dr"
 }
 
+# Número de Availability Zones a usar
 variable "az_count" {
   description = "Número de Availability Zones a usar en la región"
   type        = number
@@ -25,6 +27,7 @@ variable "az_count" {
 # }
 #Flow Logs Variables
 
+# Tipo de tráfico a capturar en los VPC Flow Logs
 variable "flow_logs_traffic_type" {
   type        = string
   default     = "ALL"
@@ -35,24 +38,29 @@ variable "flow_logs_traffic_type" {
   }
 }
 
+# Prefix dentro del bucket S3 para los VPC Flow Logs
 variable "flow_logs_s3_prefix" {
   type    = string
   default = "vpc_flow-logs/"
 }
-##Primary Region Variables##
 
+#### Variables de la región primaria ####
+
+# Establecer la región primaria
 variable "primary_region" {
   description = "Región AWS primaria donde se despliega producción"
   type        = string
   default     = "eu-south-2" # España
 }
 
+# VPC cidrs para la región primaria
 variable "vpc_primary_cidr" {
   description = "CIDR de la VPC de la región primaria"
   type        = string
   default     = "10.10.0.0/16"
 }
 
+# Cidrs de subnets públicas para la región primaria
 variable "public_subnets_cidrs_primary" {
   description = "Lista de CIDRs para subnets públicas (debe coincidir con az_count)"
   type        = list(string)
@@ -64,6 +72,7 @@ variable "public_subnets_cidrs_primary" {
   }
 }
 
+# Cidrs de subnets privadas para la región primaria
 variable "private_subnets_cidrs_primary" {
   description = "Lista de CIDRs para subnets privadas (debe coincidir con az_count)"
   type        = list(string)
@@ -75,6 +84,7 @@ variable "private_subnets_cidrs_primary" {
   }
 }
 
+# Cidrs de subnets de base de datos para la región primaria
 variable "database_subnets_cidrs_primary" {
   description = "Lista de CIDRs para subnets privadas de base de datos (debe coincidir con az_count)"
   type        = list(string)
@@ -86,48 +96,60 @@ variable "database_subnets_cidrs_primary" {
   }
 }
 
+## Frontend Variables
+
+# Tipo de instancia para las instancias Frontend
 variable "frontend_instance_type" {
   type    = string
   default = "t3.micro"
 }
 
+# Auto Scaling Group Variables para Frontend
 variable "frontend_min_size" {
   type    = number
   default = 1
 }
 
+# Auto Scaling max size para Frontend
 variable "frontend_max_size" {
   type    = number
   default = 2
 }
 
+# Auto Scaling desired capacity para Frontend
 variable "frontend_desired_capacity" {
   type    = number
   default = 1
 }
 
+# Puerto del ALB para la capa Frontend
 variable "frontend_port" {
   type    = number
   default = 80
 }
 
+# Healthcheck path del ALB para la capa Frontend
 variable "frontend_healthcheck_path" {
   type    = string
   default = "/"
 }
 
+# Security Group ID del backend. Cuando sea null, no se crea la regla de egress Frontend->Backend
 variable "backend_sg_id" {
   description = "Security Group ID del backend. Cuando sea null, no se crea la regla de egress Frontend->Backend"
   type        = string
   default     = null
 }
 
+# Puerto del servicio backend al que el Frontend debe poder conectarse.
 variable "backend_port" {
   description = "Puerto del servicio backend al que el Frontend debe poder conectarse."
   type        = number
   default     = 8080
 }
-##Secondary Region Variables##
+
+
+#### Secondary Region Variables ####
 
 variable "secondary_region" {
   description = "Región AWS secundaria donde se despliega disaster recovery"

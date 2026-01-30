@@ -10,15 +10,16 @@ provider "aws" {
   }
 }
 
+#### Regiones y AZs ####
+
 #Extrae la lista de zonas disponibles en la region seleccionada
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
-
+# Selecciona las primeras N AZss disponibles en la región primaria
 locals {
-  # Selecciona las primeras N AZss disponibles en la región primaria
   azs = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 
   common_tags = {
@@ -29,7 +30,8 @@ locals {
   }
 }
 
-#Networking - VPC primaria
+#### VPC primaria ####
+
 module "vpc_primary" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
@@ -46,16 +48,14 @@ module "vpc_primary" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  /*Con el objetivo de reducir costes en este entorno de prueba, no se crea NAT Gateway ni se permite. 
-  En un entorno real, se debería habilitar para asegurar la correcta comunicación de las subnets privadas.*/
-
   # Internet egress
   enable_nat_gateway = true
 
   one_nat_gateway_per_az = true
   single_nat_gateway     = false
 
-  create_database_subnet_group = true # DB Subnet Group para Autora/RDS
+  # DB Subnet Group para Autora
+  create_database_subnet_group = true
 
   # Etiquetas
   tags = local.common_tags
@@ -71,7 +71,7 @@ module "vpc_primary" {
   Tier = "Private-db" })
 }
 
-#VPC Flow Logs resources
+## VPC primaria Flow Logs para registro de logs de red
 resource "aws_flow_log" "vpc_primary" {
   vpc_id               = module.vpc_primary.vpc_id
   traffic_type         = var.flow_logs_traffic_type
@@ -83,6 +83,7 @@ resource "aws_flow_log" "vpc_primary" {
   depends_on = [aws_s3_bucket_policy.flow_logs]
 }
 
+## Recursos de S3 Bucket para VPC Flow Logs
 module "s3-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.10.0"
@@ -111,6 +112,7 @@ module "s3-bucket" {
   }
 }
 
+#Política de bucket para permitir VPC Flow Logs escribir en el bucket
 resource "aws_s3_bucket_policy" "flow_logs" {
   bucket = module.s3-bucket.s3_bucket_id
 
@@ -147,22 +149,9 @@ resource "aws_s3_bucket_policy" "flow_logs" {
   })
 }
 
-#Compute resources
+#### Recursos de computación comunes para las capas frontend y backend ####
 
-# locals {
-#   frontend_user_data = base64encode(<<-EOF
-#     #!/bin/bash
-#     set -euxo pipefail
-
-#     sudo yum -y install git || sudo dnf -y install git || true
-
-#     sudo rm -rf /tmp/demo-terraform-101
-#     sudo git clone https://github.com/hashicorp/demo-terraform-101 /tmp/demo-terraform-101
-#     sudo sh /tmp/demo-terraform-101/assets/setup-web.sh
-#   EOF
-#   )
-# }
-
+## User Data para instancias Frontend
 locals {
   frontend_user_data = base64encode(<<-EOF
     #!/bin/bash
@@ -179,13 +168,89 @@ locals {
   )
 }
 
+## AMI para instancias EC2 (Amazon Linux 2)
 data "aws_ssm_parameter" "amazon_linux_2_ami" {
   name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
-## Security Group for Compute Resources
+## SSM - IAM Role y Perfil de Instancia para Instancias EC2
 
-# SG del ALB (Public)
+#Creamos la política de asunción de rol para EC2
+data "aws_iam_policy_document" "ec2_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+#Creamos el rol IAM para EC2
+resource "aws_iam_role" "ec2_ssm_role" {
+  name               = "${terraform.workspace}-ec2-ssm-role"
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+}
+
+#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM creado
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+#Creamos el perfil de instancia IAM para EC2
+resource "aws_iam_instance_profile" "ec2_ssm_profile" {
+  name = "${terraform.workspace}-ec2-ssm-profile"
+  role = aws_iam_role.ec2_ssm_role.name
+}
+
+# recursos de VPC Endpoints para SSM
+locals {
+  ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
+}
+
+## VPC Endpoints para SSM
+resource "aws_vpc_endpoint" "ssm" {
+  for_each            = local.ssm_vpce_services
+  vpc_id              = module.vpc_primary.vpc_id
+  service_name        = "com.amazonaws.${var.primary_region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc_primary.private_subnets
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+
+  tags = local.common_tags
+}
+
+#### Grupos de seguridad para los recursos de la región primaria ####
+
+## Grupos de seguridad de la capa Frontend
+
+# SG para VPC Endpoints SSM
+resource "aws_security_group" "vpce_sg" {
+  name        = "${terraform.workspace}-vpce-sg"
+  description = "SG para VPC Endpoints SSM"
+  vpc_id      = module.vpc_primary.vpc_id
+
+  ingress {
+    description     = "HTTPS desde instancias frontend hacia VPC Endpoint"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.frontend_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = local.common_tags
+}
+
+# SG del ALB (Public) para la capa Frontend
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-${terraform.workspace}-alb-sg"
   description = "Security Group for ALB in Primary Region"
@@ -266,7 +331,9 @@ resource "aws_security_group" "frontend_sg" {
   }
 }
 
-# ALB (Public) + Target Group + Listener
+#### Recursos de la capa Frontend ####
+
+## ALB (Public) + Target Group + Listener
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
@@ -317,7 +384,7 @@ module "alb" {
   }
 }
 
-# Auto Scaling Group (Frontend) en subnets privadas
+## Auto Scaling Group para instancias Frontend
 
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
@@ -344,7 +411,7 @@ module "autoscaling" {
     }
   }
 
-  # Launch Template (Dentro del módulo)
+  # Launch Template para las instancias Frontend
   launch_template_name        = "${var.project_name}-${terraform.workspace}-frontend-lt"
   launch_template_description = "Frontend LT"
 
@@ -382,73 +449,3 @@ module "autoscaling" {
 #     ManagedBy = "Marin.Tenkai"
 #   })
 # }
-
-#SSM IAM Role y Perfil de Instancia para Instancias EC2
-
-#Creamos la política de asunción de rol para EC2
-data "aws_iam_policy_document" "ec2_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-#Creamos el rol IAM para EC2
-resource "aws_iam_role" "ec2_ssm_role" {
-  name               = "${terraform.workspace}-ec2-ssm-role"
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-}
-
-#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM creado
-resource "aws_iam_role_policy_attachment" "ssm_core" {
-  role       = aws_iam_role.ec2_ssm_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-#Creamos el perfil de instancia IAM para EC2
-resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "${terraform.workspace}-ec2-ssm-profile"
-  role = aws_iam_role.ec2_ssm_role.name
-}
-
-resource "aws_security_group" "vpce_sg" {
-  name        = "${terraform.workspace}-vpce-sg"
-  description = "SG para VPC Endpoints SSM"
-  vpc_id      = module.vpc_primary.vpc_id
-
-  ingress {
-    description     = "HTTPS desde instancias frontend hacia VPC Endpoint"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.common_tags
-}
-
-locals {
-  ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
-}
-
-resource "aws_vpc_endpoint" "ssm" {
-  for_each            = local.ssm_vpce_services
-  vpc_id              = module.vpc_primary.vpc_id
-  service_name        = "com.amazonaws.${var.primary_region}.${each.key}"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = module.vpc_primary.private_subnets
-  security_group_ids  = [aws_security_group.vpce_sg.id]
-  private_dns_enabled = true
-
-  tags = local.common_tags
-}
