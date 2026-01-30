@@ -12,17 +12,17 @@ variable "az_count" {
   default     = 2
 }
 
-variable "key_name" {
-  description = "Nombre del Key Pair en AWS"
-  type        = string
-  default     = "keypair-terraform"
-}
+# variable "key_name" {
+#   description = "Nombre del Key Pair en AWS"
+#   type        = string
+#   default     = "keypair-terraform"
+# }
 
-variable "public_key_path" {
-  description = "Ruta al archivo .pub de la clave pública"
-  type        = string
-  default     = ".ssh/pilot-light-dr/pilot-light-dr.pub"
-}
+# variable "public_key_path" {
+#   description = "Ruta al archivo .pub de la clave pública"
+#   type        = string
+#   default     = ".ssh/pilot-light-dr/pilot-light-dr.pub"
+# }
 #Flow Logs Variables
 
 variable "flow_logs_traffic_type" {
