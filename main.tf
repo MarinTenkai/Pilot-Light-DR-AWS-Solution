@@ -40,7 +40,7 @@ locals {
 
 resource "aws_db_subnet_group" "postgresql" {
   name       = "${terraform.workspace}j-postgresql-subnet-group"
-  subnet_ids = module.vpc_primary.database_subnets.id
+  subnet_ids = module.vpc_primary.database_subnets
 
   tags = merge(local.common_tags, {
     name = "${terraform.workspace}-postgresql-subnet-group"
