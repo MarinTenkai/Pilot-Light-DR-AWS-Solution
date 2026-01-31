@@ -101,8 +101,8 @@ resource "aws_db_instance" "postgresql" {
   publicly_accessible    = false
 
   # Multi-AZ:
-  multi_az          = true
-  availability_zone = local.azs[0] # "preferencia" inicial (tras failover puede cambiar)
+  multi_az = true
+  #availability_zone = local.azs[0] # "preferencia" inicial (tras failover puede cambiar)
 
   # Storage
   allocated_storage     = var.postgresql_allocated_storage
