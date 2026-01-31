@@ -114,7 +114,7 @@ resource "aws_db_instance" "postgresql" {
   apply_immediately       = true
   skip_final_snapshot     = true
   deletion_protection     = false
-  backup_retention_period = 7
+  backup_retention_period = 1
 
   tags = merge(local.common_tags, {
     name = "${terraform.workspace}-postgresql"
