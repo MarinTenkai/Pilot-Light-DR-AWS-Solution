@@ -295,9 +295,16 @@ locals {
   )
 }
 
-## SSM - IAM Role y Perfil de Instancia para Instancias EC2
+### SSM - IAM Role y Perfil de Instancia para Instancias EC2 Frontend y Backend ###
 
-#Creamos la política de asunción de rol para EC2
+# recursos de VPC Endpoints para SSM
+locals {
+  ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
+}
+
+## IAM Role y Perfil de Instancias para Frontend
+
+#Creamos la política de asunción de rol para EC2 FRONTEND
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -308,27 +315,67 @@ data "aws_iam_policy_document" "ec2_assume_role" {
   }
 }
 
-#Creamos el rol IAM para EC2
-resource "aws_iam_role" "ec2_ssm_role" {
-  name               = "${terraform.workspace}-ec2-ssm-role"
+#Creamos el rol IAM para EC2 FRONTEND
+resource "aws_iam_role" "ec2_frontend_role" {
+  name               = "${terraform.workspace}-ec2-frontend-role"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
-#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM creado
+#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM EC2 FRONTEND
 resource "aws_iam_role_policy_attachment" "ssm_core" {
-  role       = aws_iam_role.ec2_ssm_role.name
+  role       = aws_iam_role.ec2_frontend_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-#Creamos el perfil de instancia IAM para EC2
-resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "${terraform.workspace}-ec2-ssm-profile"
-  role = aws_iam_role.ec2_ssm_role.name
+#Creamos el perfil de instancia IAM para EC2 FRONTEND
+resource "aws_iam_instance_profile" "ec2_frontend_profile" {
+  name = "${terraform.workspace}-ec2-frontend-profile"
+  role = aws_iam_role.ec2_frontend_role.name
 }
 
-# recursos de VPC Endpoints para SSM
-locals {
-  ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
+## IAM Role y Perfil de Instancias para Backend
+
+#Creamos la política de asunción de rol para EC2 BACKEND
+data "aws_iam_policy_document" "backend_read_db_secret" {
+  statement {
+    sid    = "ReadRdsManagedSecret"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret"
+    ]
+    resources = [
+      aws_db_instance.postgresql.master_user_secret[0].secret_arn
+    ]
+  }
+}
+
+#Creamos el rol IAM para EC2 BACKEND
+resource "aws_iam_role" "ec2_backend_role" {
+  name               = "${terraform.workspace}-ec2-backend-role"
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+}
+
+#Adjuntamos la política gestionada de AmazonSSMManagedInstanceCore al rol IAM EC2 BACKEND
+resource "aws_iam_role_policy_attachment" "backend_ssm_core" {
+  role       = aws_iam_role.ec2_backend_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+#Creamos el perfil de instancia IAM para EC2 BACKEND
+resource "aws_iam_instance_profile" "ec2_backend_profile" {
+  name = "${terraform.workspace}-ec2-backend-profile"
+  role = aws_iam_role.ec2_backend_role.name
+}
+
+resource "aws_iam_policy" "backend_read_db_secret" {
+  name   = "${terraform.workspace}-backend-read-db-secret"
+  policy = data.aws_iam_policy_document.backend_read_db_secret.json
+}
+
+resource "aws_iam_role_policy_attachment" "backend_read_db_secret_attach" {
+  role       = aws_iam_role.ec2_backend_role.name
+  policy_arn = aws_iam_policy.backend_read_db_secret.arn
 }
 
 #### Recursos para la región primaria ####
@@ -716,7 +763,7 @@ module "autoscaling" {
   #key_name = aws_key_pair.ssh.key_name
 
   #Asignamos el perfil de instancia SSM
-  iam_instance_profile_name = aws_iam_instance_profile.ec2_ssm_profile.name
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
 
   # SG de las instancias
   security_groups = [aws_security_group.frontend_sg.id]
@@ -826,7 +873,7 @@ module "autoscaling_backend" {
   image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.value
   instance_type = var.backend_instance_type
 
-  iam_instance_profile_name = aws_iam_instance_profile.ec2_ssm_profile.name
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
 
   security_groups = [aws_security_group.backend_sg.id]
   user_data       = local.backend_user_data
