@@ -224,7 +224,7 @@ locals {
     DB_HOST="${aws_db_instance.postgresql.address}"
     DB_PORT="${aws_db_instance.postgresql.port}"
     DB_NAME="${var.postgresql_db_name}"
-
+    DB_SECRET_ARN="${aws_db_instance.postgresql.master_user_secret[0].secret_arn}"
 
     # --- Paquetes necesarios ---
     yum update -y
@@ -345,7 +345,7 @@ data "aws_iam_policy_document" "backend_read_db_secret" {
       "secretsmanager:DescribeSecret"
     ]
     resources = [
-      #      aws_db_instance.postgresql.master_user_secret[0].secret_arn
+      aws_db_instance.postgresql.master_user_secret[0].secret_arn
     ]
   }
 }
