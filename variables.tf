@@ -152,19 +152,19 @@ variable "frontend_instance_type" {
 # Auto Scaling Group Variables para Frontend
 variable "frontend_min_size" {
   type    = number
-  default = 1
+  default = 2
 }
 
 # Auto Scaling max size para Frontend
 variable "frontend_max_size" {
   type    = number
-  default = 2
+  default = 4
 }
 
 # Auto Scaling desired capacity para Frontend
 variable "frontend_desired_capacity" {
   type    = number
-  default = 1
+  default = 2
 }
 
 # Puerto del ALB para la capa Frontend
@@ -190,19 +190,19 @@ variable "backend_instance_type" {
 # Auto Scaling Group Variables para Frontend
 variable "backend_min_size" {
   type    = number
-  default = 1
+  default = 2
 }
 
 # Auto Scaling max size para Frontend
 variable "backend_max_size" {
   type    = number
-  default = 2
+  default = 4
 }
 
 # Auto Scaling desired capacity para Frontend
 variable "backend_desired_capacity" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "backend_healthcheck_path" {
