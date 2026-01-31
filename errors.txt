@@ -1,0 +1,134 @@
+sh-4.2$ cd /var/log/user-data-backend.log
+sh: cd: /var/log/user-data-backend.log: Not a directory
+sh-4.2$ cat /var/log/user-data-backend.log
++ set +H
++ yum -y install jq awscli postgresql python3
+Loaded plugins: extras_suggestions, langpacks, priorities, update-motd
+Existing lock /var/run/yum.pid: another copy is running as pid 2315.
+Another app is currently holding the yum lock; waiting for it to exit...
+  The other application is: yum
+    Memory :  88 M RSS (308 MB VSZ)
+    Started: Sat Jan 31 18:02:50 2026 - 00:08 ago
+    State  : Running, pid: 2315
+Another app is currently holding the yum lock; waiting for it to exit...
+  The other application is: yum
+    Memory : 242 M RSS (463 MB VSZ)
+    Started: Sat Jan 31 18:02:50 2026 - 00:10 ago
+    State  : Running, pid: 2315
+Another app is currently holding the yum lock; waiting for it to exit...
+  The other application is: yum
+    Memory : 234 M RSS (455 MB VSZ)
+    Started: Sat Jan 31 18:02:50 2026 - 00:12 ago
+    State  : Running, pid: 2315
+Package awscli-1.18.147-1.amzn2.0.2.noarch already installed and latest version
+Package python3-3.7.16-1.amzn2.0.22.x86_64 already installed and latest version
+Resolving Dependencies
+--> Running transaction check
+---> Package jq.x86_64 0:1.5-1.amzn2.0.3 will be installed
+--> Processing Dependency: libonig.so.2()(64bit) for package: jq-1.5-1.amzn2.0.3.x86_64
+---> Package postgresql.x86_64 0:9.2.24-8.amzn2.0.8 will be installed
+--> Processing Dependency: postgresql-libs(x86-64) = 9.2.24-8.amzn2.0.8 for package: postgresql-9.2.24-8.amzn2.0.8.x86_64
+--> Processing Dependency: libpq.so.5()(64bit) for package: postgresql-9.2.24-8.amzn2.0.8.x86_64
+--> Running transaction check
+---> Package oniguruma.x86_64 0:5.9.6-1.amzn2.0.7 will be installed
+---> Package postgresql-libs.x86_64 0:9.2.24-8.amzn2.0.8 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+================================================================================
+ Package              Arch        Version                 Repository       Size
+================================================================================
+Installing:
+ jq                   x86_64      1.5-1.amzn2.0.3         amzn2-core      152 k
+ postgresql           x86_64      9.2.24-8.amzn2.0.8      amzn2-core      3.0 M
+Installing for dependencies:
+ oniguruma            x86_64      5.9.6-1.amzn2.0.7       amzn2-core      127 k
+ postgresql-libs      x86_64      9.2.24-8.amzn2.0.8      amzn2-core      235 k
+
+Transaction Summary
+================================================================================
+Install  2 Packages (+2 Dependent packages)
+
+Total download size: 3.5 M
+Installed size: 18 M
+Downloading packages:
+--------------------------------------------------------------------------------
+Total                                               17 MB/s | 3.5 MB  00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : oniguruma-5.9.6-1.amzn2.0.7.x86_64                           1/4
+  Installing : postgresql-libs-9.2.24-8.amzn2.0.8.x86_64                    2/4
+  Installing : postgresql-9.2.24-8.amzn2.0.8.x86_64                         3/4
+  Installing : jq-1.5-1.amzn2.0.3.x86_64                                    4/4
+  Verifying  : postgresql-libs-9.2.24-8.amzn2.0.8.x86_64                    1/4
+  Verifying  : jq-1.5-1.amzn2.0.3.x86_64                                    2/4
+  Verifying  : postgresql-9.2.24-8.amzn2.0.8.x86_64                         3/4
+  Verifying  : oniguruma-5.9.6-1.amzn2.0.7.x86_64                           4/4
+
+Installed:
+  jq.x86_64 0:1.5-1.amzn2.0.3       postgresql.x86_64 0:9.2.24-8.amzn2.0.8
+
+Dependency Installed:
+  oniguruma.x86_64 0:5.9.6-1.amzn2.0.7
+  postgresql-libs.x86_64 0:9.2.24-8.amzn2.0.8
+
+Complete!
++ export AWS_REGION=eu-south-2
++ AWS_REGION=eu-south-2
++ export AWS_DEFAULT_REGION=eu-south-2
++ AWS_DEFAULT_REGION=eu-south-2
++ export DB_HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com
++ DB_HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com
++ export DB_PORT=5432
++ DB_PORT=5432
++ export DB_NAME=appdb
++ DB_NAME=appdb
++ export 'DB_SECRET_ARN=arn:aws:secretsmanager:eu-south-2:486918186618:secret:rds!db-d76a5acb-ffaa-4d6b-85c2-c1be2734a914-dwOIQ1'
++ DB_SECRET_ARN='arn:aws:secretsmanager:eu-south-2:486918186618:secret:rds!db-d76a5acb-ffaa-4d6b-85c2-c1be2734a914-dwOIQ1'
++ mkdir -p /var/www/backend
++ cat
++ cat
++ cat
++ chmod +x /usr/local/bin/dbcheck.sh
+++ seq 1 12
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ for i in '$(seq 1 12)'
++ /usr/local/bin/dbcheck.sh
++ sleep 10
++ nohup python3 -m http.server 8080 --directory /var/www/backend
+sh-4.2$
