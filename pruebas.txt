@@ -8,10 +8,3 @@ curl -i http://<Backend_alb_dns_name>:8080
 si devuelve 200 y el HTML, la conectividad está perfecta.
 
 #TIP: NO OLVIDES el internal- del principio del Backend_alb_dns_name.
-
-#### Prueba Conexión Backend -> Aurora
-
-1. Entra por SSM a una instancia del Backend
-2. Ejecuta:
-
-nc -vz <aurora_writer_endpoint> 3306
