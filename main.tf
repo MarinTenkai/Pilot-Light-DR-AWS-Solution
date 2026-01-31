@@ -225,7 +225,10 @@ exec > >(tee /var/log/user-data-backend.log | logger -t user-data-backend -s 2>/
 set +H || true
 
 # Dependencias
-yum -y install jq awscli postgresql python3 || true
+yum -y install jq awscli python3 || true
+
+# Cliente PostgreSQL >=10 (Necesario para SCRAM)
+amazon-linux-extras install -y postgresql14 || true
 
 export AWS_REGION="${var.primary_region}"
 export AWS_DEFAULT_REGION="${var.primary_region}"
