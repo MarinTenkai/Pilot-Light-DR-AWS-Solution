@@ -203,8 +203,8 @@ locals {
 
     mkdir -p /var/www/html
     cat > /var/www/html/index.html <<'HTML'
-    <h1>OK - Instancia responde</h1>
-    <p>Esta es una página de prueba servida desde la instancia Frontend.</p>
+    <h1>OK - Frontend Instance</h1>
+    <p>Esta es una pagina de prueba servida desde la instancia Frontend.</p>
     HTML
 
     nohup python3 -m http.server ${var.frontend_port} --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
@@ -219,14 +219,10 @@ locals {
     #!/bin/bash
     set -euxo pipefail
 
-
-
-    # --- Servidor web de prueba (como lo tenías) ---
     mkdir -p /var/www/backend
     cat > /var/www/backend/index.html <<'HTML'
     <h1>OK - Backend Instance</h1>
-    <p>Esta es una página de prueba servida desde la instancia Backend (Application Server).</p>
-    <p>Revisa /var/log/db-check.log para ver el test de conectividad a PostgreSQL.</p>
+    <p>Esta es una pagina de prueba servida desde la instancia Backend.</p>
     HTML
 
     nohup python3 -m http.server ${var.backend_port} --directory /var/www/backend >/var/log/backend-server.log 2>&1 &
