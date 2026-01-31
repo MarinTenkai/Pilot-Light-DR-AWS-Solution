@@ -219,12 +219,81 @@ locals {
     #!/bin/bash
     set -euxo pipefail
 
+    # Dependencias mínimas para el check
+    yum -y install jq awscli postgresql || true
+
+    # Variables DB (no sensibles)
+    export DB_HOST="${aws_db_instance.postgresql.address}"
+    export DB_PORT="${var.db_port}"
+    export DB_NAME="${var.postgresql_db_name}"
+    export DB_SECRET_ARN="${aws_db_instance.postgresql.master_user_secret[0].secret_arn}"
+
     mkdir -p /var/www/backend
+
     cat > /var/www/backend/index.html <<'HTML'
     <h1>OK - Backend Instance</h1>
-    <p>Esta es una pagina de prueba servida desde la instancia Backend.</p>
+    <p>Backend arriba.</p>
+    <p>DB check: <a href="/dbcheck.html">/dbcheck.html</a></p>
     HTML
 
+    cat > /usr/local/bin/dbcheck.sh <<'SH'
+    #!/bin/bash
+    set -euo pipefail
+
+    LOG="/var/log/dbcheck.log"
+    OUT="/var/www/backend/dbcheck.html"
+
+    echo "==== $(date -Is) dbcheck start ====" >> "$LOG"
+    echo "DB_HOST=$DB_HOST DB_PORT=$DB_PORT DB_NAME=$DB_NAME" >> "$LOG"
+
+    # 1) DNS
+    if getent hosts "$DB_HOST" >/dev/null 2>&1; then
+      DNS_OK="yes"
+    else
+      DNS_OK="no"
+    fi
+
+    # 2) Recupera credenciales desde Secrets Manager (password gestionada por RDS)
+    SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "$DB_SECRET_ARN" --query SecretString --output text 2>>"$LOG")"
+    DB_USER="$(echo "$SECRET_JSON" | jq -r .username)"
+    DB_PASS="$(echo "$SECRET_JSON" | jq -r .password)"
+
+    # 3) Query real
+    set +e
+    RESULT="$(PGPASSWORD="$DB_PASS" psql \
+      "host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=require connect_timeout=5" \
+      -tAc "select now() as db_time, inet_server_addr() as server_ip, inet_server_port() as server_port, pg_is_in_recovery() as in_recovery;" 2>&1)"
+    RC=$?
+    set -e
+
+    if [ $RC -eq 0 ]; then
+      echo "dbcheck OK: $RESULT" >> "$LOG"
+      cat > "$OUT" <<HTML
+    <h1>DB CHECK: OK</h1>
+    <p><b>time:</b> $(date -Is)</p>
+    <p><b>dns_ok:</b> $DNS_OK</p>
+    <p><b>result:</b> $RESULT</p>
+HTML
+      exit 0
+    else
+      echo "dbcheck FAIL (rc=$RC): $RESULT" >> "$LOG"
+      cat > "$OUT" <<HTML
+    <h1>DB CHECK: FAIL</h1>
+    <p><b>time:</b> $(date -Is)</p>
+    <p><b>dns_ok:</b> $DNS_OK</p>
+    <p><b>error (last output):</b></p>
+    <pre>$(echo "$RESULT" | tail -n 30)</pre>
+HTML
+      exit 1
+    fi
+    SH
+
+    chmod +x /usr/local/bin/dbcheck.sh
+
+    # Ejecuta el check con reintentos (sin tumbar el boot si falla)
+    ( for i in {1..12}; do /usr/local/bin/dbcheck.sh && break || true; sleep 10; done ) || true
+
+    # Servidor HTTP actual del backend
     nohup python3 -m http.server ${var.backend_port} --directory /var/www/backend >/var/log/backend-server.log 2>&1 &
   EOF
   )
