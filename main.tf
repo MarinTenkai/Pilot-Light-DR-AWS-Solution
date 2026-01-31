@@ -226,7 +226,7 @@ locals {
     export DB_HOST="${aws_db_instance.postgresql.address}"
     export DB_PORT="${var.db_port}"
     export DB_NAME="${var.postgresql_db_name}"
-    export DB_SECRET_ARN="${aws_db_instance.postgresql.master_user_secret[0].secret_arn}"
+    export DB_SECRET_ARN='${aws_db_instance.postgresql.master_user_secret[0].secret_arn}'
 
     mkdir -p /var/www/backend
 
