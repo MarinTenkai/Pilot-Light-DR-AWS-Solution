@@ -45,3 +45,18 @@ output "backend_alb_dns_name" {
   value       = module.backend_alb.dns_name
   description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
 }
+
+output "rds_postgresql_endpoint" {
+  description = "Endpoint DNS del RDS PostgreSQL"
+  value       = aws_db_instance.postgresql.endpoint
+}
+
+output "rds_postgresql_port" {
+  description = "Puerto del RDS PostgreSQL"
+  value       = aws_db_instance.postgresql.port
+}
+
+output "rds_postgresql_db_name" {
+  description = "Nombre de la DB"
+  value       = var.postgresql_db_name
+}

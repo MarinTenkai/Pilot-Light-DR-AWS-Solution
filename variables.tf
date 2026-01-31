@@ -49,6 +49,46 @@ variable "db_port" {
   type        = number
   default     = 5432
 }
+
+## RDS PostgreSQL (Multi-AZ) ##
+
+variable "postgresql_instance_class" {
+  description = "Clase de instancia RDS"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "postgresql_allocated_storage" {
+  description = "Almacenamiento inicial (GB)"
+  type        = number
+  default     = 20
+}
+
+variable "postgresql_max_allocated_storage" {
+  description = "Almacenamiento máximo autoscaling (GB)"
+  type        = number
+  default     = 100
+}
+
+variable "postgresql_db_name" {
+  description = "Nombre de la base de datos inicial"
+  type        = string
+  default     = "appdb"
+}
+
+variable "postgresql_master_username" {
+  description = "Usuario master"
+  type        = string
+  default     = "appadmin"
+}
+
+variable "postgresql_master_password" {
+  description = "Password master"
+  type        = string
+  sensitive   = true
+  default     = "1234567890dmr?"
+}
+
 #### Variables de la región primaria ####
 
 # Establecer la región primaria

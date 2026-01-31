@@ -34,7 +34,19 @@ locals {
 
 ### Recursos de RDS Database ###
 
-## Grupos de seguridad y reglas para RDS
+## Grupos de seguridad, ajustes de red y reglas para RDS PostgresSQL
+
+# Subnet Group para RDS usando las subnets "database" del módulo VPC
+
+resource "aws_db_subnet_group" "postgresql" {
+  name       = "${terraform.workspace}j-postgresql-subnet-group"
+  subnet_ids = module.vpc_primary.database_subnets.id
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-postgresql-subnet-group"
+    tier = "Database"
+  })
+}
 
 # Grupo de seguridad para RDS
 resource "aws_security_group" "rds_sg" {
@@ -70,7 +82,45 @@ resource "aws_security_group_rule" "rds_ingress_from_backend" {
   source_security_group_id = aws_security_group.backend_sg.id
 }
 
+## Recursos para RDS PostgresSQL Multi-AZ
 
+resource "aws_db_instance" "postgresql" {
+  identifier = "${terraform.workspace}-postgresql"
+
+  engine         = "postgres"
+  instance_class = var.postgresql_instance_class
+
+  db_name  = var.postgresql_db_name
+  username = var.postgresql_master_username
+  password = var.postgresql_master_password
+  port     = var.db_port
+
+  #Red/VPC
+  db_subnet_group_name   = aws_db_subnet_group.postgresql.name
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+  publicly_accessible    = false
+
+  # Multi-AZ:
+  multi_az          = true
+  availability_zone = local.azs[0] # "preferencia" inicial (tras failover puede cambiar)
+
+  # Storage
+  allocated_storage     = var.postgresql_allocated_storage
+  max_allocated_storage = var.postgresql_max_allocated_storage
+  storage_type          = "gp3"
+  storage_encrypted     = true
+
+  # Operación (modo lab)
+  apply_immediately       = true
+  skip_final_snapshot     = true
+  deletion_protection     = false
+  backup_retention_period = 7
+
+  tags = merge(local.common_tags, {
+    name = "${terraform.workspace}-postgresql"
+    tier = "Database"
+  })
+}
 
 ## Recursos de S3 Bucket para VPC Flow Logs
 module "s3-bucket" {
