@@ -1,0 +1,38 @@
+sh-4.2$ sudo tail -n 200 /var/log/dbcheck.log
+==== 2026-01-31T18:28:25+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:28:36+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:28:46+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:28:57+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:29:07+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:29:18+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:29:28+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:29:39+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:29:49+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:30:00+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:30:11+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+==== 2026-01-31T18:30:21+0000 dbcheck start ====
+REGION=eu-south-2 - HOST=devops-aws-pldr-dev-postgresql.cfs6e4iasud5.eu-south-2.rds.amazonaws.com - PORT=5432 - DB=appdb
+dbcheck FAIL (rc=2): psql: SCRAM authentication requires libpq version 10 or above
+sh-4.2$
