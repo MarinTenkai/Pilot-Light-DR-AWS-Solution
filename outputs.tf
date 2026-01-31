@@ -45,13 +45,3 @@ output "backend_alb_dns_name" {
   value       = module.backend_alb.dns_name
   description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
 }
-
-output "aurora_writer_endpoint" {
-  value       = aws_rds_cluster.aurora.endpoint
-  description = "Endpoint writer del cluster Aurora"
-}
-
-output "aurora_reader_endpoint" {
-  value       = aws_rds_cluster.aurora.reader_endpoint
-  description = "Endpoint reader del cluster Aurora"
-}

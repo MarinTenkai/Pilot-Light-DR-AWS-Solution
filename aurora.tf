@@ -129,4 +129,16 @@ variable "aurora_with_express_configuration" {
   default     = true
 }
 
+
+output "aurora_writer_endpoint" {
+  value       = aws_rds_cluster.aurora.endpoint
+  description = "Endpoint writer del cluster Aurora"
+}
+
+output "aurora_reader_endpoint" {
+  value       = aws_rds_cluster.aurora.reader_endpoint
+  description = "Endpoint reader del cluster Aurora"
+}
+
+
 */

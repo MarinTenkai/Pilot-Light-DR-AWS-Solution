@@ -32,38 +32,38 @@ locals {
   }
 }
 
-### Recursos de Aurora Database ###
+### Recursos de RDS Database ###
 
-## Grupos de seguridad y reglas para Aurora
+## Grupos de seguridad y reglas para RDS
 
-# Grupo de seguridad para Aurora
-resource "aws_security_group" "aurora_sg" {
-  name        = "${terraform.workspace}-aurora-sg"
-  description = "SG para Aurora: solo accesible desde backend"
+# Grupo de seguridad para RDS
+resource "aws_security_group" "rds_sg" {
+  name        = "${terraform.workspace}-rds-sg"
+  description = "SG para rds: solo accesible desde backend"
   vpc_id      = module.vpc_primary.vpc_id
 
   tags = merge(local.common_tags, {
-    name = "${terraform.workspace}-aurora-sg"
+    name = "${terraform.workspace}-rds-sg"
     tier = "Database"
   })
 }
 
-# Regla Backend -> Aurora (egress necesario porque backend_sg es restrictivo)
-resource "aws_security_group_rule" "backend_egress_to_aurora" {
+# Regla Backend -> rds (egress necesario porque backend_sg es restrictivo)
+resource "aws_security_group_rule" "backend_egress_to_rds" {
   type                     = "egress"
   security_group_id        = aws_security_group.backend_sg.id
-  description              = "Backend hacia Aurora"
+  description              = "Backend hacia rds"
   from_port                = var.db_port
   to_port                  = var.db_port
   protocol                 = "tcp"
-  source_security_group_id = aws_security_group.aurora_sg.id
+  source_security_group_id = aws_security_group.rds_sg.id
 }
 
-# Regla Aurora <- Backend (ingress)
-resource "aws_security_group_rule" "aurora_ingress_from_backend" {
+# Regla rds <- Backend (ingress)
+resource "aws_security_group_rule" "rds_ingress_from_backend" {
   type                     = "ingress"
-  security_group_id        = aws_security_group.aurora_sg.id
-  description              = "Backend hacia Aurora"
+  security_group_id        = aws_security_group.rds_sg.id
+  description              = "Backend hacia rds"
   from_port                = var.db_port
   to_port                  = var.db_port
   protocol                 = "tcp"
