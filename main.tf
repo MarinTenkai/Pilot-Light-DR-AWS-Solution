@@ -219,68 +219,7 @@ locals {
     #!/bin/bash
     set -euxo pipefail
 
-    # --- Config DB (inyectado por Terraform) ---
-    AWS_REGION="${var.primary_region}"
-    DB_HOST="${aws_db_instance.postgresql.address}"
-    DB_PORT="${aws_db_instance.postgresql.port}"
-    DB_NAME="${var.postgresql_db_name}"
-    DB_SECRET_ARN="${aws_db_instance.postgresql.master_user_secret[0].secret_arn}"
 
-    # --- Paquetes necesarios ---
-    yum update -y
-    yum install -y jq postgresql
-
-    # --- Obtener credenciales desde Secrets Manager ---
-    CREDS_JSON="$(aws secretsmanager get-secret-value \
-      --region "$AWS_REGION" \
-      --secret-id "$DB_SECRET_ARN" \
-      --query SecretString \
-      --output text)"
-
-    DB_USER="$(echo "$CREDS_JSON" | jq -r '.username')"
-    DB_PASS="$(echo "$CREDS_JSON" | jq -r '.password')"
-
-    # --- Test de conectividad con reintentos ---
-    LOG_FILE="/var/log/db-check.log"
-    echo "[$(date -Is)] DB check starting..." | tee -a "$LOG_FILE"
-    echo "[$(date -Is)] Host=$DB_HOST Port=$DB_PORT Db=$DB_NAME User=$DB_USER" | tee -a "$LOG_FILE"
-
-    # reintentar hasta 30 veces (5 min)
-    OK="false"
-    for i in $(seq 1 30); do
-      if PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -c "SELECT now();" >>"$LOG_FILE" 2>&1; then
-        OK="true"
-        echo "[$(date -Is)] DB connection OK on attempt $i" | tee -a "$LOG_FILE"
-        break
-      else
-        echo "[$(date -Is)] DB connection failed (attempt $i). Retrying in 10s..." | tee -a "$LOG_FILE"
-        sleep 10
-      fi
-    done
-
-    # Si conectó, probamos escritura/lectura real
-    if [ "$OK" = "true" ]; then
-      PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -c "CREATE TABLE IF NOT EXISTS healthcheck (id bigserial PRIMARY KEY, ts timestamptz NOT NULL DEFAULT now());" \
-        >>"$LOG_FILE" 2>&1
-
-      PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -c "INSERT INTO healthcheck DEFAULT VALUES;" \
-        >>"$LOG_FILE" 2>&1
-
-      PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-        -c "SELECT COUNT(*) AS rows_in_healthcheck FROM healthcheck;" \
-        >>"$LOG_FILE" 2>&1
-
-      echo "[$(date -Is)] DB write/read check OK" | tee -a "$LOG_FILE"
-    else
-      echo "[$(date -Is)] DB check failed after retries (app will still start)" | tee -a "$LOG_FILE"
-    fi
 
     # --- Servidor web de prueba (como lo tenías) ---
     mkdir -p /var/www/backend
