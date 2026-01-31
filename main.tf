@@ -214,90 +214,117 @@ locals {
 
 # User Data para instancias Backend
 locals {
-
   backend_user_data = base64encode(<<-EOF
-    #!/bin/bash
-    set -euxo pipefail
+#!/bin/bash
+set -euxo pipefail
 
-    # Dependencias mínimas para el check
-    yum -y install jq awscli postgresql || true
+# Log completo del user-data para depurar rápido
+exec > >(tee /var/log/user-data-backend.log | logger -t user-data-backend -s 2>/dev/console) 2>&1
 
-    # Variables DB (no sensibles)
-    export DB_HOST="${aws_db_instance.postgresql.address}"
-    export DB_PORT="${var.db_port}"
-    export DB_NAME="${var.postgresql_db_name}"
-    export DB_SECRET_ARN='${aws_db_instance.postgresql.master_user_secret[0].secret_arn}'
+# (Opcional) desactiva history expansion por si acaso
+set +H || true
 
-    mkdir -p /var/www/backend
+# Dependencias
+yum -y install jq awscli postgresql python3 || true
 
-    cat > /var/www/backend/index.html <<'HTML'
-    <h1>OK - Backend Instance</h1>
-    <p>Backend arriba.</p>
-    <p>DB check: <a href="/dbcheck.html">/dbcheck.html</a></p>
-    HTML
+export AWS_REGION="${var.primary_region}"
+export AWS_DEFAULT_REGION="${var.primary_region}"
 
-    cat > /usr/local/bin/dbcheck.sh <<'SH'
-    #!/bin/bash
-    set -euo pipefail
+# Variables DB (no sensibles)
+export DB_HOST="${aws_db_instance.postgresql.address}"
+export DB_PORT="${var.db_port}"
+export DB_NAME="${var.postgresql_db_name}"
+export DB_SECRET_ARN="${aws_db_instance.postgresql.master_user_secret[0].secret_arn}"
 
-    LOG="/var/log/dbcheck.log"
-    OUT="/var/www/backend/dbcheck.html"
+mkdir -p /var/www/backend
 
-    echo "==== $(date -Is) dbcheck start ====" >> "$LOG"
-    echo "DB_HOST=$DB_HOST DB_PORT=$DB_PORT DB_NAME=$DB_NAME" >> "$LOG"
-
-    # 1) DNS
-    if getent hosts "$DB_HOST" >/dev/null 2>&1; then
-      DNS_OK="yes"
-    else
-      DNS_OK="no"
-    fi
-
-    # 2) Recupera credenciales desde Secrets Manager (password gestionada por RDS)
-    SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "$DB_SECRET_ARN" --query SecretString --output text 2>>"$LOG")"
-    DB_USER="$(echo "$SECRET_JSON" | jq -r .username)"
-    DB_PASS="$(echo "$SECRET_JSON" | jq -r .password)"
-
-    # 3) Query real
-    set +e
-    RESULT="$(PGPASSWORD="$DB_PASS" psql \
-      "host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=require connect_timeout=5" \
-      -tAc "select now() as db_time, inet_server_addr() as server_ip, inet_server_port() as server_port, pg_is_in_recovery() as in_recovery;" 2>&1)"
-    RC=$?
-    set -e
-
-    if [ $RC -eq 0 ]; then
-      echo "dbcheck OK: $RESULT" >> "$LOG"
-      cat > "$OUT" <<HTML
-    <h1>DB CHECK: OK</h1>
-    <p><b>time:</b> $(date -Is)</p>
-    <p><b>dns_ok:</b> $DNS_OK</p>
-    <p><b>result:</b> $RESULT</p>
+# Página principal
+cat <<'HTML' > /var/www/backend/index.html
+<h1>OK - Backend Instance</h1>
+<p>Backend arriba.</p>
+<p>DB check: <a href="/dbcheck.html">/dbcheck.html</a></p>
 HTML
-      exit 0
-    else
-      echo "dbcheck FAIL (rc=$RC): $RESULT" >> "$LOG"
-      cat > "$OUT" <<HTML
-    <h1>DB CHECK: FAIL</h1>
-    <p><b>time:</b> $(date -Is)</p>
-    <p><b>dns_ok:</b> $DNS_OK</p>
-    <p><b>error (last output):</b></p>
-    <pre>$(echo "$RESULT" | tail -n 30)</pre>
+
+# Estado inicial del dbcheck
+cat <<'HTML' > /var/www/backend/dbcheck.html
+<h1>DB CHECK: PENDING</h1>
+<p>Ejecutando comprobaciones...</p>
 HTML
-      exit 1
-    fi
-    SH
 
-    chmod +x /usr/local/bin/dbcheck.sh
+# Script de comprobación DB (delimitador SH al inicio de línea)
+cat <<'SH' > /usr/local/bin/dbcheck.sh
+#!/bin/bash
+set -euo pipefail
 
-    # Ejecuta el check con reintentos (sin tumbar el boot si falla)
-    ( for i in {1..12}; do /usr/local/bin/dbcheck.sh && break || true; sleep 10; done ) || true
+LOG="/var/log/dbcheck.log"
+OUT="/var/www/backend/dbcheck.html"
 
-    # Servidor HTTP actual del backend
-    nohup python3 -m http.server ${var.backend_port} --directory /var/www/backend >/var/log/backend-server.log 2>&1 &
-  EOF
+echo "==== $(date -Is) dbcheck start ====" >> "$LOG"
+echo "REGION=$AWS_REGION - HOST=$DB_HOST - PORT=$DB_PORT - DB=DB_NAME" >> "$LOG"
+
+DNS_OK="no"
+if getent hosts "$DB_HOST" >/dev/null 2>&1; then
+  DNS_OK="yes"
+fi
+
+# Obtener credenciales desde Secrets Manager
+SECRET_JSON="$(aws secretsmanager get-secret-value \
+  --region "AWS_REGION" \
+  --secret-id "$DB_SECRET_ARN" \
+  --query SecretString \
+  --output text 2>>"$LOG")"
+
+DB_USER="$(echo "$SECRET_JSON" | jq -r .username)"
+DB_PASS="$(echo "$SECRET_JSON" | jq -r .password)"
+
+# Query real
+set +e
+RESULT="$(PGPASSWORD="$DB_PASS" psql \
+  "host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=require connect_timeout=5" \
+  -tAc "select now() as db_time, inet_server_addr() as server_ip, inet_server_port() as server_port, pg_is_in_recovery() as in_recovery;" 2>&1)"
+RC=$?
+set -e
+
+if [ $RC -eq 0 ]; then
+  echo "dbcheck OK: $RESULT" >> "$LOG"
+  cat <<HTML > "$OUT"
+<h1>DB CHECK: OK</h1>
+<p><b>time:</b> $(date -Is)</p>
+<p><b>dns_ok:</b> $DNS_OK</p>
+<p><b>result:</b> $RESULT</p>
+HTML
+  exit 0
+else
+  echo "dbcheck FAIL (rc=$RC): $RESULT" >> "$LOG"
+  # Escape mínimo para que no rompa el HTML si hay caracteres raros
+  ERR="$(echo "$RESULT" | tail -n 30 | sed 's/&/&amp;/g;s/</&lt;/g;s/>/&gt;/g')"
+  cat <<HTML > "$OUT"
+<h1>DB CHECK: FAIL</h1>
+<p><b>time:</b> $(date -Is)</p>
+<p><b>dns_ok:</b> $DNS_OK</p>
+<p><b>error (last output):</b></p>
+<pre>$ERR</pre>
+HTML
+  exit 1
+fi
+SH
+
+chmod +x /usr/local/bin/dbcheck.sh
+
+# Reintentos (RDS puede tardar en estar listo)
+for i in $(seq 1 12); do
+  if /usr/local/bin/dbcheck.sh; then
+    break
+  fi
+  sleep 10
+done || true
+
+# Servidor HTTP backend
+nohup python3 -m http.server ${var.backend_port} --directory /var/www/backend >/var/log/backend-server.log 2>&1 &
+EOF
   )
 }
+
 
 ### SSM - IAM Role y Perfil de Instancia para Instancias EC2 Frontend y Backend ###
 
