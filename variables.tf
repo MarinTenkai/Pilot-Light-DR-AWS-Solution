@@ -44,56 +44,11 @@ variable "flow_logs_s3_prefix" {
   default = "vpc_flow-logs/"
 }
 
-## AURORA DATABASE ###
-
-variable "aurora_engine" {
-  description = "Motor Aurora (aurora-postgresql o aurora-mysql)"
-  type        = string
-  default     = "aurora-postgresql"
-}
-
-variable "aurora_port" {
+variable "db_port" {
   description = "Puerto de la BD (5432 para aurora-postgresql, 3306 para aurora-mysql)"
   type        = number
   default     = 5432
 }
-
-variable "aurora_database_name" {
-  description = "Nombre de la base de datos inicial"
-  type        = string
-  default     = "appdb"
-}
-
-variable "aurora_master_username" {
-  description = "Usuario master (la password se gestionará en Secrets Manager)"
-  type        = string
-  default     = "dbadmin"
-}
-
-variable "aurora_instance_class" {
-  description = "Clase de instancia Aurora"
-  type        = string
-  default     = "db.t3.medium"
-}
-
-variable "aurora_backup_retention_period" {
-  description = "Días de retención de backups"
-  type        = number
-  default     = 1
-}
-
-variable "aurora_deletion_protection" {
-  description = "Protección contra borrado"
-  type        = bool
-  default     = false
-}
-
-variable "aurora_skip_final_snapshot" {
-  description = "Evitar snapshot final al destruir (para labs/dev)"
-  type        = bool
-  default     = true
-}
-
 #### Variables de la región primaria ####
 
 # Establecer la región primaria
