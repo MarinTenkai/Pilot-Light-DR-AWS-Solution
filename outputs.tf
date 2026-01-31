@@ -60,3 +60,9 @@ output "rds_postgresql_db_name" {
   description = "Nombre de la DB"
   value       = var.postgresql_db_name
 }
+
+output "rds_postgres_master_secret_arn" {
+  description = "Secret ARN (username/password) creado por RDS en Secrets Manager"
+  value       = aws_db_instance.postgresql.master_user_secret[0].secret_arn
+  sensitive   = true
+}
