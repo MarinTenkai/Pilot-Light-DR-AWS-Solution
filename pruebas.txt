@@ -1,10 +1,17 @@
 #### Prueba comunicación Frontend -> Backend
 
+1. Entra por SSM a una instancia del Backend
+2. Ejecuta:
+curl -i localhost:8080
+curl -s localhost:8080/dbcheck.html
+
 1. Entra por SSM a una instancia del Frontend
 2. Ejecuta:
 
 curl -i http://<Backend_alb_dns_name>:8080
-
-si devuelve 200 y el HTML, la conectividad está perfecta.
+curl -s http://<Backend_alb_dns_name>:8080/dbcheck.html
 
 #TIP: NO OLVIDES el internal- del principio del Backend_alb_dns_name.
+
+
+

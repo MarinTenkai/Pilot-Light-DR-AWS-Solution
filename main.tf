@@ -260,7 +260,7 @@ LOG="/var/log/dbcheck.log"
 OUT="/var/www/backend/dbcheck.html"
 
 echo "==== $(date -Is) dbcheck start ====" >> "$LOG"
-echo "REGION=$AWS_REGION - HOST=$DB_HOST - PORT=$DB_PORT - DB=DB_NAME" >> "$LOG"
+echo "REGION=$AWS_REGION - HOST=$DB_HOST - PORT=$DB_PORT - DB=$DB_NAME" >> "$LOG"
 
 DNS_OK="no"
 if getent hosts "$DB_HOST" >/dev/null 2>&1; then
@@ -269,7 +269,7 @@ fi
 
 # Obtener credenciales desde Secrets Manager
 SECRET_JSON="$(aws secretsmanager get-secret-value \
-  --region "AWS_REGION" \
+  --region "$AWS_REGION" \
   --secret-id "$DB_SECRET_ARN" \
   --query SecretString \
   --output text 2>>"$LOG")"
