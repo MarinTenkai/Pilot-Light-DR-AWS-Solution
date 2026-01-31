@@ -10,8 +10,47 @@ curl -s localhost:8080/dbcheck.html
 
 curl -i http://<Backend_alb_dns_name>:8080
 curl -s http://<Backend_alb_dns_name>:8080/dbcheck.html
-
 #TIP: NO OLVIDES el internal- del principio del Backend_alb_dns_name.
 
+Si hay errores:
 
+sudo tail -n 200 /var/log/user-data-backend.log
+sudo tail -n 200 /var/log/dbcheck.log
+sudo tail -n 200 /var/log/backend-server.log
 
+#### Comprobación funcionamiento conexión Backend -> RDS
+
+1. Entra por SSM a una instancia del Backend
+2. Ejecuta:
+
+REGION="tu-región"
+DB_HOST="el-host-de-tu-rds-db"
+DB_PORT="5432"
+DB_NAME="appdb"
+SECRET_ARN="TU_SECRET_ARN"
+
+SECRET_JSON=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$SECRET_ARN" --query SecretString --output text)
+DB_USER=$(echo "$SECRET_JSON" | jq -r .username)
+DB_PASS=$(echo "$SECRET_JSON" | jq -r .password)
+
+PGPASSWORD="$DB_PASS" psql "host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=require"
+
+3. Una vez dentro puedes hacer \q para salir pero antes puedes hacer ciertas comprobaciones
+
+select now();
+
+select version();
+
+4. Puedes crear una tabla de prueba y ver como esta aparece en la base de datos desde la consola de AWS.
+
+create table if not exists lab_ping (
+  id bigserial primary key,
+  ts timestamptz not null default now(),
+  note text
+);
+
+insert into lab_ping(note) values ('hola desde backend');
+
+5. Comprueba el resultado con:
+
+select * from lab_ping order by id desc limit 5;
