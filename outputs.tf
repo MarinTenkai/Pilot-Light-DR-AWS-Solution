@@ -1,9 +1,4 @@
-#### Outputs Comunes de la región primaria y secundaria ####
-
-output "flow_logs_s3_destination_arn" {
-  description = "ARN destino para VPC Flow Logs (bucket + prefix)"
-  value       = "${module.s3-bucket.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
-}
+#### Outputs Comunes de la Región Primaria y Secundaria ####
 
 output "Environment" {
   value = terraform.workspace
@@ -11,38 +6,43 @@ output "Environment" {
 
 #### Outputs de la región primaria ####
 
+output "flow_logs_s3_destination_arn_primary" {
+  description = "ARN destino para VPC Flow Logs (bucket + prefix)"
+  value       = "${module.s3_bucket_primary.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
+}
+
 output "vpc_primary_id" {
   description = "ID de la VPC primaria"
   value       = module.vpc_primary.vpc_id
 }
 
-output "public_primary_subnets" {
+output "public_subnets_primary" {
   description = "IDs de subnets públicas"
   value       = module.vpc_primary.public_subnets
 }
 
-output "private_primary_subnets" {
+output "private_subnets_primary" {
   description = "IDs de subnets privadas (app)"
   value       = module.vpc_primary.private_subnets
 }
 
-output "database_primary_subnets" {
+output "database_subnets_primary" {
   description = "IDs de subnets privadas (db)"
   value       = module.vpc_primary.database_subnets
 }
 
-output "frontend_primary_alb_dns_name" {
-  value       = module.alb.dns_name
+output "frontend_alb_dns_name_primary" {
+  value       = module.alb_frontend_primary.dns_name
   description = "DNS público del ALB"
 }
 
-output "frontend_primary_asg_name" {
-  value       = module.autoscaling.autoscaling_group_name
+output "frontend_asg_name_primary" {
+  value       = module.autoscaling_frontend_primary.autoscaling_group_name
   description = "Nombre del ASG del frontend"
 }
 
-output "backend_alb_dns_name" {
-  value       = module.backend_alb.dns_name
+output "backend_alb_dns_name_primary" {
+  value       = module.alb_backend_primary.dns_name
   description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
 }
 
