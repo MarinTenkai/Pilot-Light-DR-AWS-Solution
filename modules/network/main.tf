@@ -37,7 +37,7 @@ module "s3_bucket_flow_logs" {
   version = "5.10.0"
 
   # S3 bucket names son globales; incluir role + region ayuda a evitar colisiones
-  bucket        = "${var.name_prefix}-vpc-${var.role}-flow-logs-${data.aws_region.current.name}"
+  bucket        = "${var.name_prefix}-vpc-${var.role}-flow-logs-${data.aws_region.current.region}"
   force_destroy = var.flow_logs_force_destroy
 
   block_public_acls       = true
@@ -76,7 +76,7 @@ resource "aws_s3_bucket_policy" "flow_logs" {
             "aws:SourceAccount" = data.aws_caller_identity.current.account_id
           }
           ArnLike = {
-            "aws:SourceArn" = "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:vpc-flow-log/*"
+            "aws:SourceArn" = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:vpc-flow-log/*"
           }
         }
       },
@@ -105,7 +105,7 @@ resource "aws_vpc_endpoint" "ssm" {
   for_each = var.ssm_vpce_services
 
   vpc_id            = module.vpc.vpc_id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
+  service_name      = "com.amazonaws.${data.aws_region.current.region}.${each.key}"
   vpc_endpoint_type = "Interface"
 
   subnet_ids          = module.vpc.private_subnets

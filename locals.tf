@@ -21,8 +21,6 @@ locals {
       public_subnet_tags   = merge(local.common_tags, local.primary_tags, { Tier = "Public" })
       private_subnet_tags  = merge(local.common_tags, local.primary_tags, { Tier = "Private-app" })
       database_subnet_tags = merge(local.common_tags, local.primary_tags, { Tier = "Private-db" })
-
-      vpce_sg_id = module.network_primary.vpce_sg_id
     }
 
     secondary = {
@@ -37,8 +35,6 @@ locals {
       public_subnet_tags   = merge(local.common_tags, local.secondary_tags, { Tier = "Public" })
       private_subnet_tags  = merge(local.common_tags, local.secondary_tags, { Tier = "Private-app" })
       database_subnet_tags = merge(local.common_tags, local.secondary_tags, { Tier = "Private-db" })
-
-      vpce_sg_id = module.network_secondary.vpce_sg_id
     }
   }
 }

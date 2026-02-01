@@ -29,7 +29,7 @@ resource "aws_security_group" "rds_sg" {
 # Regla Backend -> rds (egress necesario porque backend_sg es restrictivo)
 resource "aws_security_group_rule" "backend_egress_to_rds" {
   type                     = "egress"
-  security_group_id        = aws_security_group.backend_sg_primary.id
+  security_group_id        = module.network_primary.backend_sg_id
   description              = "Backend hacia rds"
   from_port                = var.db_port
   to_port                  = var.db_port
@@ -45,7 +45,7 @@ resource "aws_security_group_rule" "rds_ingress_from_backend" {
   from_port                = var.db_port
   to_port                  = var.db_port
   protocol                 = "tcp"
-  source_security_group_id = aws_security_group.backend_sg_primary.id
+  source_security_group_id = module.network_primary.backend_sg_id
 }
 
 ## Recursos para RDS PostgresSQL Multi-AZ

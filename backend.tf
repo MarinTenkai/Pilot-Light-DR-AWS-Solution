@@ -16,7 +16,7 @@ module "alb_backend_primary" {
   load_balancer_type = "application"
   internal           = true
 
-  vpc_id          = module.network_primary.id
+  vpc_id          = module.network_primary.vpc_id
   subnets         = module.network_primary.private_subnets
   security_groups = [module.network_primary.alb_frontend_sg_id]
 
