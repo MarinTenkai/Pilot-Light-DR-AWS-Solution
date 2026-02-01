@@ -8,7 +8,7 @@
 resource "aws_security_group" "alb_frontend_sg_primary" {
   name        = "${terraform.workspace}-alb-sg"
   description = "SG para ALB publico (entrada desde internet)"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}alb-sg"
@@ -20,7 +20,7 @@ resource "aws_security_group" "alb_frontend_sg_primary" {
 resource "aws_security_group" "frontend_sg_primary" {
   name        = "${terraform.workspace}-frontend-sg"
   description = "SG para instancias Frontend (solo desde ALB publico)"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-frontend-sg"
@@ -32,7 +32,7 @@ resource "aws_security_group" "frontend_sg_primary" {
 resource "aws_security_group" "alb_backend_sg_primary" {
   name        = "${terraform.workspace}-backend-alb-sg"
   description = "SG para ALB interno del Backend (solo desde Frontend)"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-backend-alb-sg"
@@ -44,7 +44,7 @@ resource "aws_security_group" "alb_backend_sg_primary" {
 resource "aws_security_group" "backend_sg_primary" {
   name        = "${terraform.workspace}-backend-sg"
   description = "SG para instancias Backend (solo desde ALB interno)"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-backend-sg"
@@ -56,7 +56,7 @@ resource "aws_security_group" "backend_sg_primary" {
 resource "aws_security_group" "vpce_sg_primary" {
   name        = "${terraform.workspace}-vpce-sg"
   description = "SG para interface Endpoints de SSM (443 desde Frontend/Backend)"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-vpce-sg"

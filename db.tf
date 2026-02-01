@@ -6,7 +6,7 @@
 
 resource "aws_db_subnet_group" "postgresql" {
   name       = "${terraform.workspace}j-postgresql-subnet-group"
-  subnet_ids = module.vpc_primary.database_subnets
+  subnet_ids = module.network_primary.database_subnets
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-postgresql-subnet-group"
@@ -18,7 +18,7 @@ resource "aws_db_subnet_group" "postgresql" {
 resource "aws_security_group" "rds_sg" {
   name        = "${terraform.workspace}-rds-sg"
   description = "SG para rds: solo accesible desde backend"
-  vpc_id      = module.vpc_primary.vpc_id
+  vpc_id      = module.network_primary.vpc_id
 
   tags = merge(local.common_tags, local.primary_tags, {
     name = "${terraform.workspace}-rds-sg"

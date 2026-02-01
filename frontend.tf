@@ -14,8 +14,8 @@ module "alb_frontend_primary" {
 
   name                       = "${terraform.workspace}-alb"
   load_balancer_type         = "application"
-  vpc_id                     = module.vpc_primary.vpc_id
-  subnets                    = module.vpc_primary.public_subnets
+  vpc_id                     = module.network_primary.vpc_id
+  subnets                    = module.network_primary.public_subnets
   security_groups            = [aws_security_group.alb_frontend_sg_primary.id]
   enable_deletion_protection = false
 
@@ -70,7 +70,7 @@ module "autoscaling_frontend_primary" {
   name = "${terraform.workspace}-frontend-asg"
 
   # Subnets privadas (2 AZs)
-  vpc_zone_identifier = module.vpc_primary.private_subnets
+  vpc_zone_identifier = module.network_primary.private_subnets
 
   min_size         = var.frontend_min_size_primary
   max_size         = var.frontend_max_size_primary

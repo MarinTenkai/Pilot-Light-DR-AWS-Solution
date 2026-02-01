@@ -1,0 +1,15 @@
+$ terraform validate
+╷
+│ Warning: Reference to undefined provider
+│
+│   on main.tf line 4, in module "network_primary":
+│    4:     aws = aws.primary
+│
+│ There is no explicit declaration for local provider name "aws" in module.network_primary, so Terraform is assuming you mean to pass a configuration for "hashicorp/aws".
+│
+│ If you also control the child module, add a required_providers entry named "aws" with the source address "hashicorp/aws".
+│
+│ (and one more similar warning elsewhere)
+╵
+╷
+│ Error: Cycle: module.network_primary.var.tags (expand), module.network_primary.module.vpc.var.tags (expand), module.network_primary.var.vpc_cidr (expand), module.network_primary.module.vpc.var.cidr (expand), module.network_primary.var.role (expand), module.network_primary.local.name (expand), module.network_primary.module.vpc.var.name (expand), module.network_primary.module.vpc.aws_vpc.this, module.network_primary.module.vpc.output.vpc_id (expand), module.network_primary.output.vpc_id (expand), aws_security_group.vpce_sg_primary, local.network (expand)

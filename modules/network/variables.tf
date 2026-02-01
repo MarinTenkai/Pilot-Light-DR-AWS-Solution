@@ -1,0 +1,93 @@
+variable "name_prefix" {
+  type = string
+}
+
+# "primary" | "secondary"
+variable "role" {
+  type = string
+}
+
+variable "vpc_cidr" {
+  type = string
+}
+
+variable "azs" {
+  type = list(string)
+}
+
+variable "public_subnets" {
+  type = list(string)
+}
+
+variable "private_subnets" {
+  type = list(string)
+}
+
+variable "database_subnets" {
+  type = list(string)
+}
+
+variable "enable_nat_gateway" {
+  type    = bool
+  default = true
+}
+
+variable "one_nat_gateway_per_az" {
+  type    = bool
+  default = true
+}
+
+variable "single_nat_gateway" {
+  type    = bool
+  default = false
+}
+
+variable "flow_logs_traffic_type" {
+  type    = string
+  default = "ALL"
+
+  validation {
+    condition     = contains(["ALL", "ACCEPT", "REJECT"], var.flow_logs_traffic_type)
+    error_message = "flow_logs_traffic_type debe ser ALL, ACCEPT o REJECT"
+  }
+}
+
+variable "flow_logs_s3_prefix" {
+  type    = string
+  default = "vpc_flow-logs/"
+}
+
+variable "flow_logs_force_destroy" {
+  type    = bool
+  default = true
+}
+
+variable "ssm_vpce_services" {
+  type    = set(string)
+  default = ["ssm", "ec2messages", "ssmmessages"]
+}
+
+# SG para endpoints (puedes crearlo dentro del módulo si prefieres, pero así lo integras con tu SG actual)
+variable "vpce_sg_id" {
+  type = string
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "public_subnet_tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "private_subnet_tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "database_subnet_tags" {
+  type    = map(string)
+  default = {}
+}

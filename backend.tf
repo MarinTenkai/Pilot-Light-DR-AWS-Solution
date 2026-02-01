@@ -16,8 +16,8 @@ module "alb_backend_primary" {
   load_balancer_type = "application"
   internal           = true
 
-  vpc_id          = module.vpc_primary.vpc_id
-  subnets         = module.vpc_primary.private_subnets
+  vpc_id          = module.network_primary.id
+  subnets         = module.network_primary.private_subnets
   security_groups = [aws_security_group.alb_backend_sg_primary.id]
 
   enable_deletion_protection = false
@@ -68,7 +68,7 @@ module "autoscaling_backend_primary" {
 
   name = "${terraform.workspace}-backend-asg"
 
-  vpc_zone_identifier = module.vpc_primary.private_subnets
+  vpc_zone_identifier = module.network_primary.private_subnets
 
   min_size         = var.backend_min_size_primary
   max_size         = var.backend_max_size_primary

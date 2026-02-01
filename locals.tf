@@ -1,3 +1,48 @@
+locals {
+  vpc_common = {
+    enable_nat_gateway     = true
+    one_nat_gateway_per_az = true
+    single_nat_gateway     = false
+    flow_logs_traffic_type = var.flow_logs_traffic_type
+    flow_logs_s3_prefix    = var.flow_logs_s3_prefix
+    ssm_vpce_services      = local.ssm_vpce_services
+  }
+
+  network = {
+    primary = {
+      role             = "primary"
+      azs              = local.azs_primary
+      vpc_cidr         = var.vpc_primary_cidr
+      public_subnets   = var.public_subnets_cidrs_primary
+      private_subnets  = var.private_subnets_cidrs_primary
+      database_subnets = var.database_subnets_cidrs_primary
+
+      tags                 = merge(local.common_tags, local.primary_tags)
+      public_subnet_tags   = merge(local.common_tags, local.primary_tags, { Tier = "Public" })
+      private_subnet_tags  = merge(local.common_tags, local.primary_tags, { Tier = "Private-app" })
+      database_subnet_tags = merge(local.common_tags, local.primary_tags, { Tier = "Private-db" })
+
+      vpce_sg_id = aws_security_group.vpce_sg_primary.id
+    }
+
+    secondary = {
+      role             = "secondary"
+      azs              = local.azs_secondary
+      vpc_cidr         = var.vpc_secondary_cidr
+      public_subnets   = var.public_subnets_cidrs_secondary
+      private_subnets  = var.private_subnets_cidrs_secondary
+      database_subnets = var.database_subnets_cidrs_secondary
+
+      tags                 = merge(local.common_tags, local.secondary_tags)
+      public_subnet_tags   = merge(local.common_tags, local.secondary_tags, { Tier = "Public" })
+      private_subnet_tags  = merge(local.common_tags, local.secondary_tags, { Tier = "Private-app" })
+      database_subnet_tags = merge(local.common_tags, local.secondary_tags, { Tier = "Private-db" })
+
+      vpce_sg_id = aws_security_group.vpce_sg_secondary.id
+    }
+  }
+}
+
 ## Tags comunes del proyecto
 locals {
   common_tags = {
@@ -34,8 +79,8 @@ locals {
 
 # Dirección del Resolver de la región primaria y secundaria
 locals {
-  vpc_resolver_cidr_primary = "${cidrhost(module.vpc_primary.vpc_cidr_block, 2)}/32"
-  #vpc_resolver_cidr_secondary = "${cidrhost(module.vpc_secondary.vpc_cidr_block, 2)}/32"
+  vpc_resolver_cidr_primary = "${cidrhost(module.network_primary.vpc_cidr_block, 2)}/32"
+  #vpc_resolver_cidr_secondary = "${cidrhost(module.network_secondary.vpc_cidr_block, 2)}/32"
 }
 
 # Id de los grupo de seguridad correspondientes al Frontend y Backend de las Regiones Primaria y Secundaria
