@@ -44,7 +44,7 @@ module "s3_bucket_primary" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.10.0"
 
-  bucket = "${terraform.workspace}-vpc_primary-flow-logs"
+  bucket = "${terraform.workspace}-vpc-primary-flow-logs"
 
   #Parámetro para entornos dev/test comentar o eliminar en producción para evitar eliminaciones accidentales
   force_destroy = true
