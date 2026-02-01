@@ -1,0 +1,3 @@
+$ terraform validate
+╷
+│ Error: Cycle: module.network_primary.var.role (expand), module.network_primary.local.name (expand), module.network_primary.module.vpc.var.name (expand), module.network_primary.module.vpc.var.tags (expand), module.network_primary.var.tags (expand), module.network_primary.aws_security_group.vpce_sg, module.network_primary.output.vpce_sg_id (expand), local.network (expand), module.network_primary.var.vpc_cidr (expand), module.network_primary.module.vpc.var.cidr (expand), module.network_primary.module.vpc.aws_vpc.this, module.network_primary.module.vpc.output.vpc_id (expand)

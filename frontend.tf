@@ -16,7 +16,7 @@ module "alb_frontend_primary" {
   load_balancer_type         = "application"
   vpc_id                     = module.network_primary.vpc_id
   subnets                    = module.network_primary.public_subnets
-  security_groups            = [aws_security_group.alb_frontend_sg_primary.id]
+  security_groups            = [module.network_primary.alb_frontend_sg_id]
   enable_deletion_protection = false
 
   # Listener HTTP :80
@@ -99,7 +99,7 @@ module "autoscaling_frontend_primary" {
   iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
 
   # SG de las instancias
-  security_groups = [aws_security_group.frontend_sg_primary.id]
+  security_groups = [module.network_primary.frontend_sg_id]
 
   # user data
   user_data = local.frontend_user_data

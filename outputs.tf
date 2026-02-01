@@ -10,38 +10,41 @@ output "vpc_id_primary" {
   value = module.network_primary.vpc_id
 }
 
-output "vpc_id_secondary" {
-  value = module.network_secondary.vpc_id
-}
+# output "vpc_id_secondary" {
+#   value = module.network_secondary.vpc_id
+# }
 
 output "public_subnets_primary" {
   value = module.network_primary.public_subnets
 }
-output "public_subnets_secondary" {
-  value = module.network_secondary.public_subnets
-}
+
+# output "public_subnets_secondary" {
+#   value = module.network_secondary.public_subnets
+# }
 
 output "private_subnets_primary" {
   value = module.network_primary.private_subnets
 }
-output "private_subnets_secondary" {
-  value = module.network_secondary.private_subnets
-}
+
+# output "private_subnets_secondary" {
+#   value = module.network_secondary.private_subnets
+# }
 
 output "database_subnets_primary" {
   value = module.network_primary.database_subnets
 }
-output "database_subnets_secondary" {
-  value = module.network_secondary.database_subnets
-}
+
+# output "database_subnets_secondary" {
+#   value = module.network_secondary.database_subnets
+# }
 
 output "flow_logs_s3_destination_arn_primary" {
   value = module.network_primary.flow_logs_s3_destination_arn
 }
 
-output "flow_logs_s3_destination_arn_secondary" {
-  value = module.network_secondary.flow_logs_s3_destination_arn
-}
+# output "flow_logs_s3_destination_arn_secondary" {
+#   value = module.network_secondary.flow_logs_s3_destination_arn
+# }
 
 output "frontend_alb_dns_name_primary" {
   value       = module.alb_frontend_primary.dns_name

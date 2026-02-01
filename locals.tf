@@ -22,7 +22,7 @@ locals {
       private_subnet_tags  = merge(local.common_tags, local.primary_tags, { Tier = "Private-app" })
       database_subnet_tags = merge(local.common_tags, local.primary_tags, { Tier = "Private-db" })
 
-      vpce_sg_id = aws_security_group.vpce_sg_primary.id
+      vpce_sg_id = module.network_primary.vpce_sg_id
     }
 
     secondary = {
@@ -38,7 +38,7 @@ locals {
       private_subnet_tags  = merge(local.common_tags, local.secondary_tags, { Tier = "Private-app" })
       database_subnet_tags = merge(local.common_tags, local.secondary_tags, { Tier = "Private-db" })
 
-      vpce_sg_id = aws_security_group.vpce_sg_secondary.id
+      vpce_sg_id = module.network_secondary.vpce_sg_id
     }
   }
 }

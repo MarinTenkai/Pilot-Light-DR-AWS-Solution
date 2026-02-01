@@ -18,7 +18,7 @@ module "alb_backend_primary" {
 
   vpc_id          = module.network_primary.id
   subnets         = module.network_primary.private_subnets
-  security_groups = [aws_security_group.alb_backend_sg_primary.id]
+  security_groups = [module.network_primary.alb_frontend_sg_id]
 
   enable_deletion_protection = false
 
@@ -92,7 +92,7 @@ module "autoscaling_backend_primary" {
 
   iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
 
-  security_groups = [aws_security_group.backend_sg_primary.id]
+  security_groups = [module.network_primary.backend_sg_id]
   user_data       = local.backend_user_data_primary
 
   tags = merge(local.common_tags, local.primary_tags, {
