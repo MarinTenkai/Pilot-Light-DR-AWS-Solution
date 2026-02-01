@@ -18,8 +18,9 @@ variable "secondary_region" {
 #############################################################################
 #############################################################################
 
-
-## Variables Generales comunes para la Región Primaria y Secundaria
+#############################################################
+###### Comunes para las Regiones Primaria y Secundaria ######
+#############################################################
 
 # Nombre del proyecto
 variable "project_name" {
@@ -54,45 +55,7 @@ variable "flow_logs_s3_prefix" {
   default = "vpc_flow-logs/"
 }
 
-## RDS PostgreSQL (Multi-AZ) ##
-
-variable "db_port" {
-  description = "Puerto de la BD (5432 para postgresql, 3306 para mysql)"
-  type        = number
-  default     = 5432
-}
-
-variable "postgresql_instance_class" {
-  description = "Clase de instancia RDS"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "postgresql_allocated_storage" {
-  description = "Almacenamiento inicial (GB)"
-  type        = number
-  default     = 20
-}
-
-variable "postgresql_max_allocated_storage" {
-  description = "Almacenamiento máximo autoscaling (GB)"
-  type        = number
-  default     = 100
-}
-
-variable "postgresql_db_name" {
-  description = "Nombre de la base de datos inicial"
-  type        = string
-  default     = "appdb"
-}
-
-variable "postgresql_master_username" {
-  description = "Usuario master"
-  type        = string
-  default     = "appadmin"
-}
-
-## ASGs Frontend & Backend comunes para Región Primaria y Secundaria
+#### ASGs Frontend & Backend comunes para Región Primaria y Secundaria
 
 # Tipo de instancia para las instancias Frontend
 variable "frontend_instance_type" {
@@ -131,87 +94,49 @@ variable "backend_port" {
   default     = 8080
 }
 
-## Frontend Variables para la Región Primaria
+#############################################
+###### Variables de la Región Primaria ######
+#############################################
 
-# Auto Scaling Group Variables para Frontend para la región Primaria
+## Frontend para la Región Primaria
+
+# min size del Auto Scaling Group en Frontend para la región Primaria
 variable "frontend_min_size_primary" {
   type    = number
   default = 2
 }
 
-# Auto Scaling max size para Frontend para la región Primaria
+# max size del Auto Scaling Group en Frontend para la región Primaria
 variable "frontend_max_size_primary" {
   type    = number
   default = 4
 }
 
-# Auto Scaling desired capacity para Frontend para la región Primaria
+# desired capacity del Auto Scaling Group en Frontend para la región Primaria
 variable "frontend_desired_capacity_primary" {
   type    = number
   default = 2
 }
 
-## Backend Variables para la Región Primaria
+## Backend para la Región Primaria
 
-# Auto Scaling Group Variables para Backend para la Región Primaria
+# min size del Auto Scaling Group en Backend para la Región Primaria
 variable "backend_min_size_primary" {
   type    = number
   default = 2
 }
 
-# Auto Scaling max size para Backend para la Región Primaria
+# max size del Auto Scaling Group en Backend para la Región Primaria
 variable "backend_max_size_primary" {
   type    = number
   default = 4
 }
 
-# Auto Scaling desired capacity para Backend para la Región Primaria
+# desired capacity del Auto Scaling Group en Backend para la Región Primaria
 variable "backend_desired_capacity_primary" {
   type    = number
   default = 2
 }
-
-## Frontend Variables para la Región Secundaria
-
-# Auto Scaling Group Variables para Frontend para la Región Secundaria
-variable "frontend_min_size_secondary" {
-  type    = number
-  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
-}
-
-# Auto Scaling max size para Frontend para la Región Secundaria
-variable "frontend_max_size_secondary" {
-  type    = number
-  default = 4
-}
-
-# Auto Scaling desired capacity para Frontend para la Región Secundaria
-variable "frontend_desired_capacity_secondary" {
-  type    = number
-  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
-}
-
-## Backend Variables para la Región Secundaria
-
-# Auto Scaling Group Variables para Backend para la región Secundaria
-
-variable "backend_min_size_secondary" {
-  type    = number
-  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
-}
-
-# Auto Scaling desired capacity para Backend para la región Secundaria
-variable "backend_max_size_secondary" {
-  type    = number
-  default = 4
-}
-
-# Auto Scaling max size para Backend para la Región Secundaria
-variable "backend_desired_capacity_secondary" {
-  type    = number
-  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
-}
-
 
 ## Networking para la Región Primaria
 
@@ -258,7 +183,51 @@ variable "database_subnets_cidrs_primary" {
   }
 }
 
-## Networking para la Región Primaria
+#############################################
+###### Variables de la Región Secundaria ######
+#############################################
+
+## Frontend Variables para la Región Secundaria 
+
+# min size del Auto Scaling Group en Frontend para la Región Secundaria
+variable "frontend_min_size_secondary" {
+  type    = number
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
+}
+
+# max size del Auto Scaling Group en Frontend para la Región Secundaria
+variable "frontend_max_size_secondary" {
+  type    = number
+  default = 4
+}
+
+# desired capacity del Auto Scaling Group en Frontend para la Región Secundaria
+variable "frontend_desired_capacity_secondary" {
+  type    = number
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
+}
+
+## Backend para la Región Secundaria
+
+# min size del Auto Scaling Group en Backend para la región Secundaria
+variable "backend_min_size_secondary" {
+  type    = number
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
+}
+
+# max size del Auto Scaling Group en Backend para la región Secundaria
+variable "backend_max_size_secondary" {
+  type    = number
+  default = 4
+}
+
+# desired capacity del Auto Scaling en Backend para la Región Secundaria
+variable "backend_desired_capacity_secondary" {
+  type    = number
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
+}
+
+## Networking para la Región Secundaria
 
 # VPC cidrs para la Región Secundaria
 variable "vpc_secondary_cidr" {
@@ -301,4 +270,48 @@ variable "database_subnets_cidrs_secondary" {
     condition     = length(var.database_subnets_cidrs_secondary) == var.az_count
     error_message = "database_subnet_cidrs debe tener exactamente ${var.az_count} elementos"
   }
+}
+
+
+
+
+
+
+
+## RDS PostgreSQL (Multi-AZ) ##
+
+variable "db_port" {
+  description = "Puerto de la BD (5432 para postgresql, 3306 para mysql)"
+  type        = number
+  default     = 5432
+}
+
+variable "postgresql_instance_class" {
+  description = "Clase de instancia RDS"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "postgresql_allocated_storage" {
+  description = "Almacenamiento inicial (GB)"
+  type        = number
+  default     = 20
+}
+
+variable "postgresql_max_allocated_storage" {
+  description = "Almacenamiento máximo autoscaling (GB)"
+  type        = number
+  default     = 100
+}
+
+variable "postgresql_db_name" {
+  description = "Nombre de la base de datos inicial"
+  type        = string
+  default     = "appdb"
+}
+
+variable "postgresql_master_username" {
+  description = "Usuario master"
+  type        = string
+  default     = "appadmin"
 }

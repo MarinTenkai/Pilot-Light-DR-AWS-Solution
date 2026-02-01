@@ -1,10 +1,16 @@
-#### Recursos de la capa Frontend de la región primaria ####
+############################################
+###### Recursos de la Región Primaria ######
+############################################
 
-## ALB (Public) + Target Group + Listener
+## ALB público para Frontend de la región primaria
 
 module "alb_frontend_primary" {
   source  = "terraform-aws-modules/alb/aws"
   version = "10.5.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   name                       = "${terraform.workspace}-alb"
   load_balancer_type         = "application"
@@ -51,11 +57,15 @@ module "alb_frontend_primary" {
   }
 }
 
-## Auto Scaling Group para instancias Frontend
+## Auto Scaling Group para instancias Frontend de la región primaria
 
 module "autoscaling_frontend_primary" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.1.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   name = "${terraform.workspace}-frontend-asg"
 
@@ -100,3 +110,7 @@ module "autoscaling_frontend_primary" {
     Tier = "Frontend"
   })
 }
+
+##############################################
+###### Recursos de la Región Secundaria ######
+##############################################

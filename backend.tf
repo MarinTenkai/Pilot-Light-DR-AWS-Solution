@@ -1,10 +1,16 @@
-#### Recursos de la capa backend de la región primaria ####
+############################################
+###### Recursos de la Región Primaria ######
+############################################
 
-## ALB interno para Backend
+## ALB interno para Backend de la región primaria
 
 module "alb_backend_primary" {
   source  = "terraform-aws-modules/alb/aws"
   version = "10.5.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   name               = "${terraform.workspace}-backend-alb"
   load_balancer_type = "application"
@@ -51,10 +57,14 @@ module "alb_backend_primary" {
   }
 }
 
-## Backend ASG (Application Servers)
+## Auto Scaling Group para instancias Backend de la región primaria
 module "autoscaling_backend_primary" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.1.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   name = "${terraform.workspace}-backend-asg"
 
@@ -90,3 +100,7 @@ module "autoscaling_backend_primary" {
     tier = "Backend"
   })
 }
+
+##############################################
+###### Recursos de la Región Secundaria ######
+##############################################

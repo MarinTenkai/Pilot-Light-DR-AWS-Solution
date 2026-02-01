@@ -1,4 +1,4 @@
-## IAM Roles y Perfiles de Instancias
+## IAM Roles y Perfiles de Instancias para las Regiones Primaria y Secundaria
 
 #Creamos el rol IAM para EC2 FRONTEND
 resource "aws_iam_role" "ec2_frontend_role" {

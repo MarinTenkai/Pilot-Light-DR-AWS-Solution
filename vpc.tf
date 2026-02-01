@@ -1,8 +1,15 @@
-## VPC primaria
+############################################
+###### Recursos de la Región Primaria ######
+############################################
 
+## VPC de la región primaria
 module "vpc_primary" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   name = "${terraform.workspace}-primary"
   cidr = var.vpc_primary_cidr
@@ -39,10 +46,14 @@ module "vpc_primary" {
   Tier = "Private-db" })
 }
 
-## Recursos de S3 Bucket para VPC Flow Logs
+## Recursos de S3 Bucket para VPC Flow Logs de la región primaria
 module "s3_bucket_primary" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.10.0"
+
+  providers = {
+    aws = aws.primary
+  }
 
   bucket = "${terraform.workspace}-vpc-primary-flow-logs"
 
@@ -68,8 +79,8 @@ module "s3_bucket_primary" {
   }
 }
 
-#Política de bucket para permitir VPC Flow Logs escribir en el bucket
-resource "aws_s3_bucket_policy" "flow_primary_logs" {
+#Política de bucket para permitir VPC Flow Logs escribir en el bucket de la región primaria
+resource "aws_s3_bucket_policy" "flow_logs_primary" {
   bucket = module.s3_bucket_primary.s3_bucket_id
 
   policy = jsonencode({
@@ -105,7 +116,7 @@ resource "aws_s3_bucket_policy" "flow_primary_logs" {
   })
 }
 
-## VPC primaria Flow Logs para registro de logs de red
+## VPC Flow Logs para registro de logs de red de la región primaria
 resource "aws_flow_log" "vpc_primary" {
   vpc_id               = module.vpc_primary.vpc_id
   traffic_type         = var.flow_logs_traffic_type
@@ -114,10 +125,10 @@ resource "aws_flow_log" "vpc_primary" {
 
   max_aggregation_interval = 600
 
-  depends_on = [aws_s3_bucket_policy.flow_primary_logs]
+  depends_on = [aws_s3_bucket_policy.flow_logs_primary]
 }
 
-## VPC Endpoints para SSM
+## VPC Endpoints para SSM de la región primaria
 resource "aws_vpc_endpoint" "ssm_primary" {
   for_each            = local.ssm_vpce_services
   vpc_id              = module.vpc_primary.vpc_id
@@ -129,3 +140,8 @@ resource "aws_vpc_endpoint" "ssm_primary" {
 
   tags = merge(local.common_tags, local.primary_tags)
 }
+
+##############################################
+###### Recursos de la Región Secundaria ######
+##############################################
+

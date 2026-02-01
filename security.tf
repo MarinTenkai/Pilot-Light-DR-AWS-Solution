@@ -1,3 +1,7 @@
+############################################
+###### Recursos de la Región Primaria ######
+############################################
+
 #### Grupos de seguridad y reglas para los recursos de la región primaria ####
 
 # SG del ALB público (Internet -> ALB)
@@ -94,7 +98,7 @@ resource "aws_security_group_rule" "alb_egress_to_frontend_primary" {
   source_security_group_id = aws_security_group.frontend_sg_primary.id
 }
 
-resource "aws_security_group_rule" "frontend_ingress_from_alb" {
+resource "aws_security_group_rule" "frontend_ingress_from_alb_primary" {
   type                     = "ingress"
   security_group_id        = aws_security_group.frontend_sg_primary.id
   description              = "ALB publico hacia Frontend"
@@ -210,3 +214,7 @@ resource "aws_security_group_rule" "app_egress_https_internet_primary" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
 }
+
+##############################################
+###### Recursos de la Región Secundaria ######
+##############################################

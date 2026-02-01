@@ -1,22 +1,23 @@
-#### Prueba comunicación Frontend -> Backend
+#### Prueba comunicación Frontend & Backend
 
+## Desde el backend
 1. Entra por SSM a una instancia del Backend
 2. Ejecuta:
 curl -i localhost:8080
 curl -s localhost:8080/dbcheck.html
 
+Si hay errores:
+sudo tail -n 200 /var/log/user-data-backend.log
+sudo tail -n 200 /var/log/dbcheck.log
+sudo tail -n 200 /var/log/backend-server.log
+
+## Desde el Frontend
 1. Entra por SSM a una instancia del Frontend
 2. Ejecuta:
 
 curl -i http://<Backend_alb_dns_name>:8080
 curl -s http://<Backend_alb_dns_name>:8080/dbcheck.html
 #TIP: NO OLVIDES el internal- del principio del Backend_alb_dns_name.
-
-Si hay errores:
-
-sudo tail -n 200 /var/log/user-data-backend.log
-sudo tail -n 200 /var/log/dbcheck.log
-sudo tail -n 200 /var/log/backend-server.log
 
 #### Comprobación funcionamiento conexión Backend -> RDS
 
@@ -27,6 +28,7 @@ REGION="tu-región"
 DB_HOST="el-host-de-tu-rds-db"
 DB_PORT="5432"
 DB_NAME="appdb"
+set +H
 SECRET_ARN="TU_SECRET_ARN"
 
 SECRET_JSON=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$SECRET_ARN" --query SecretString --output text)
@@ -54,3 +56,7 @@ insert into lab_ping(note) values ('hola desde backend');
 5. Comprueba el resultado con:
 
 select * from lab_ping order by id desc limit 5;
+
+6. salir
+
+\q

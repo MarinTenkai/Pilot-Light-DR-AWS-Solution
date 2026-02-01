@@ -184,7 +184,7 @@ EOF
   )
 }
 
-## User Data para instancias Backend de la Región Primaria ~!!! MODIFICAR JUNTO BASE DE DATOS !!!~
+## User Data para instancias Backend de la Región Secundaria ~!!! MODIFICAR JUNTO BASE DE DATOS !!!~
 locals {
   backend_user_data_secondary = base64encode(<<-EOF
 #!/bin/bash
