@@ -77,25 +77,6 @@ locals {
   ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
 }
 
-# Dirección del Resolver de la región primaria y secundaria
-locals {
-  vpc_resolver_cidr_primary = "${cidrhost(module.network_primary.vpc_cidr_block, 2)}/32"
-  #vpc_resolver_cidr_secondary = "${cidrhost(module.network_secondary.vpc_cidr_block, 2)}/32"
-}
-
-# Id de los grupo de seguridad correspondientes al Frontend y Backend de las Regiones Primaria y Secundaria
-locals {
-  app_instance_sg_primary = {
-    frontend = aws_security_group.frontend_sg_primary.id
-    backend  = aws_security_group.backend_sg_primary.id
-  }
-  # Descomentar una vez creado los recursos secundarios
-  # app_instance_sg_secondary = {
-  #   frontend = aws_security_group.frontend_sg_secondary.id
-  #   backend  = aws_security_group.backend_sg_secondary.id
-  # }
-}
-
 ## User Data para instancias Frontend
 locals {
   frontend_user_data = base64encode(<<-EOF

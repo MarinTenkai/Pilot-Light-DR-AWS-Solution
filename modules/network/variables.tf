@@ -67,11 +67,6 @@ variable "ssm_vpce_services" {
   default = ["ssm", "ec2messages", "ssmmessages"]
 }
 
-# SG para endpoints (puedes crearlo dentro del módulo si prefieres, pero así lo integras con tu SG actual)
-variable "vpce_sg_id" {
-  type = string
-}
-
 variable "tags" {
   type    = map(string)
   default = {}
@@ -90,4 +85,17 @@ variable "private_subnet_tags" {
 variable "database_subnet_tags" {
   type    = map(string)
   default = {}
+}
+
+# Puerto del ALB para la capa Frontend
+variable "frontend_port" {
+  type    = number
+  default = 80
+}
+
+# Puerto del servicio backend al que el Frontend debe poder conectarse.
+variable "backend_port" {
+  description = "Puerto del servicio backend al que el Frontend debe poder conectarse."
+  type        = number
+  default     = 8080
 }

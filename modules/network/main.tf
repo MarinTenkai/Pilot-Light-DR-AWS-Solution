@@ -109,7 +109,7 @@ resource "aws_vpc_endpoint" "ssm" {
   vpc_endpoint_type = "Interface"
 
   subnet_ids          = module.vpc.private_subnets
-  security_group_ids  = [var.vpce_sg_id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
   private_dns_enabled = true
 
   tags = var.tags
