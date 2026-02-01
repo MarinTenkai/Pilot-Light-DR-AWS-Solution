@@ -11,7 +11,7 @@ output "flow_logs_s3_destination_arn_primary" {
   value       = "${module.s3_bucket_primary.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
 }
 
-output "vpc_primary_id" {
+output "vpc_id_primary" {
   description = "ID de la VPC primaria"
   value       = module.vpc_primary.vpc_id
 }

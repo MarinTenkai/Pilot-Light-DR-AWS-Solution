@@ -176,7 +176,7 @@ variable "backend_desired_capacity_primary" {
 # Auto Scaling Group Variables para Frontend para la Región Secundaria
 variable "frontend_min_size_secondary" {
   type    = number
-  default = 0
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
 # Auto Scaling max size para Frontend para la Región Secundaria
@@ -188,15 +188,16 @@ variable "frontend_max_size_secondary" {
 # Auto Scaling desired capacity para Frontend para la Región Secundaria
 variable "frontend_desired_capacity_secondary" {
   type    = number
-  default = 0
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
 ## Backend Variables para la Región Secundaria
 
 # Auto Scaling Group Variables para Backend para la región Secundaria
+
 variable "backend_min_size_secondary" {
   type    = number
-  default = 0
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
 # Auto Scaling desired capacity para Backend para la región Secundaria
@@ -208,7 +209,7 @@ variable "backend_max_size_secondary" {
 # Auto Scaling max size para Backend para la Región Secundaria
 variable "backend_desired_capacity_secondary" {
   type    = number
-  default = 0
+  default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
 
