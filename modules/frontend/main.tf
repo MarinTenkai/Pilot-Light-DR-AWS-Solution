@@ -22,6 +22,12 @@ locals {
     nohup python3 -m http.server ${var.frontend_port} --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
   EOF
   )
+
+  # REEMPLAZO TOTAL: si override != null, se usa override; si no, default.
+  user_data_base64 = var.user_data_base64_override != null ? var.user_data_base64_override : local.default_user_data_base64
+
+  # REEMPLAZO TOTAL del AMI: si override != null usa override; si no, usa SSM (valor ami-xxxx)
+  image_id = var.image_id_override != null ? var.image_id_override : data.aws_ssm_parameter.amazon_linux_2_ami.value
 }
 
 # ALB público
@@ -94,13 +100,13 @@ module "asg" {
   launch_template_name        = local.lt_name
   launch_template_description = "Frontend LT"
 
-  image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.value
+  image_id      = local.image_id
   instance_type = var.frontend_instance_type
 
   iam_instance_profile_name = var.iam_instance_profile_name
   security_groups           = [var.instance_sg_id]
 
-  user_data = local.default_user_data_base64
+  user_data = local.user_data_base64
 
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-${var.role}-frontend-instance"

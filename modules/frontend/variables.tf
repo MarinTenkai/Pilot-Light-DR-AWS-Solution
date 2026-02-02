@@ -35,15 +35,17 @@ variable "frontend_instance_type" {
 variable "iam_instance_profile_name" { type = string }
 
 # Opcional: sobrescribir AMI (si no, se obtiene por SSM en la región del provider)
-variable "image_id" {
-  type    = string
-  default = null
+variable "image_id_override" {
+  description = "Si se define, reemplaza COMPLETAMENTE el AMI del módulo. Debe ser ami-xxxx"
+  type        = string
+  default     = null
 }
 
 # Opcional: sobrescribir user_data ya en base64 (si no, se genera dentro del módulo)
-variable "user_data_base64" {
-  type    = string
-  default = null
+variable "user_data_base64_override" {
+  description = "Si se define, reemplaza COMPLETAMENTE el user_data por defecto del módulo. Debe venir ya en Base64"
+  type        = string
+  default     = null
 }
 
 # Tags comunes/role ya fusionadas desde el root
