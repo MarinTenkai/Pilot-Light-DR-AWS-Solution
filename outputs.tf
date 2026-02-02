@@ -51,14 +51,39 @@ output "frontend_alb_dns_name_primary" {
   description = "DNS público del ALB"
 }
 
+output "frontend_alb_dns_name_secondary" {
+  value       = module.frontend_secondary.alb_dns_name
+  description = "DNS público del ALB"
+}
+
+output "backend_alb_dns_name_primary" {
+  value       = module.backend_primary.alb_dns_name
+  description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
+}
+
+output "backend_alb_dns_name_secondary" {
+  value       = module.backend_secondary.alb_dns_name
+  description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
+}
+
 output "frontend_asg_name_primary" {
   value       = module.frontend_primary.asg_name
   description = "Nombre del ASG del frontend"
 }
 
-output "backend_alb_dns_name_primary" {
-  value       = module.alb_backend_primary.dns_name
-  description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
+output "frontend_asg_name_secondary" {
+  value       = module.frontend_secondary.asg_name
+  description = "Nombre del ASG del frontend"
+}
+
+output "backend_asg_name_primary" {
+  value       = module.backend_primary.asg_name
+  description = "Nombre del ASG del frontend"
+}
+
+output "backend_asg_name_secondary" {
+  value       = module.backend_secondary.asg_name
+  description = "Nombre del ASG del frontend"
 }
 
 # output "rds_postgresql_endpoint" {
