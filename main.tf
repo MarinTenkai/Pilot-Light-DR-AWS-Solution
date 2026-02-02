@@ -81,7 +81,7 @@ module "frontend_primary" {
   frontend_port             = var.frontend_port
   frontend_healthcheck_path = var.frontend_healthcheck_path
   frontend_instance_type    = var.frontend_instance_type
-  image_id                  = data.aws_ssm_parameter.amazon_linux_2_ami.name
+  #  image_id                  = data.aws_ssm_parameter.amazon_linux_2_ami.name
   iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
 
   enable_deletion_protection = var.enable_deletion_protection
@@ -110,7 +110,7 @@ module "frontend_secondary" {
   frontend_port             = var.frontend_port
   frontend_healthcheck_path = var.frontend_healthcheck_path
   frontend_instance_type    = var.frontend_instance_type
-  image_id                  = data.aws_ssm_parameter.amazon_linux_2_ami.name
+  #  image_id                  = data.aws_ssm_parameter.amazon_linux_2_ami.name
   iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
 
   enable_deletion_protection = var.enable_deletion_protection

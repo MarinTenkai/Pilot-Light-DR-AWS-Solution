@@ -1,3 +1,9 @@
-$ terraform validate
-╷
-│ Error: Cycle: module.network_primary.var.role (expand), module.network_primary.local.name (expand), module.network_primary.module.vpc.var.name (expand), module.network_primary.module.vpc.var.tags (expand), module.network_primary.var.tags (expand), module.network_primary.aws_security_group.vpce_sg, module.network_primary.output.vpce_sg_id (expand), local.network (expand), module.network_primary.var.vpc_cidr (expand), module.network_primary.module.vpc.var.cidr (expand), module.network_primary.module.vpc.aws_vpc.this, module.network_primary.module.vpc.output.vpc_id (expand)
+Error: creating EC2 Launch Template (secondary-frontend-lt-20260202020219606600000001): operation error EC2: CreateLaunchTemplate, https response error StatusCode: 400, RequestID: decd714a-d427-417a-8283-99a5a25bde64, api error InvalidAMIID.Malformed: The image ID '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' is not valid. The expected format is ami-xxxxxxxx or ami-xxxxxxxxxxxxxxxxx.
+with module.frontend_secondary.module.asg.aws_launch_template.this[0]
+on .terraform/modules/frontend_secondary.asg/main.tf line 671, in resource "aws_launch_template" "this":
+resource "aws_launch_template" "this" {
+
+Error: creating EC2 Launch Template (primary-frontend-lt-20260202020219780000000001): operation error EC2: CreateLaunchTemplate, https response error StatusCode: 400, RequestID: e1053e92-93f7-4703-ba56-092fb4d9f0ce, api error InvalidAMIID.Malformed: The image ID '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' is not valid. The expected format is ami-xxxxxxxx or ami-xxxxxxxxxxxxxxxxx.
+with module.frontend_primary.module.asg.aws_launch_template.this[0]
+on .terraform/modules/frontend_primary.asg/main.tf line 671, in resource "aws_launch_template" "this":
+resource "aws_launch_template" "this" {
