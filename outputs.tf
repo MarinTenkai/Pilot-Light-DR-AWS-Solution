@@ -4,8 +4,6 @@ output "Environment" {
   value = terraform.workspace
 }
 
-#### Outputs de la región primaria ####
-
 output "vpc_id_primary" {
   value = module.network_primary.vpc_id
 }
@@ -85,6 +83,27 @@ output "backend_asg_name_secondary" {
   value       = module.backend_secondary.asg_name
   description = "Nombre del ASG del frontend"
 }
+
+output "route53_zone_name" {
+  value       = aws_route53_zone.public.name
+  description = "Nombre de la hosted zone creada."
+}
+
+output "route53_zone_id" {
+  value       = aws_route53_zone.public.zone_id
+  description = "ID de la hosted zone creada."
+}
+
+output "route53_name_servers" {
+  value       = aws_route53_zone.public.name_servers
+  description = "Nameservers autoritativos de Route53 (para probar sin dominio comprado)."
+}
+
+output "frontend_failover_fqdn" {
+  value       = "${var.route53_record_name}.${var.route53_zone_name}"
+  description = "FQDN del record con failover."
+}
+
 
 # output "rds_postgresql_endpoint" {
 #   description = "Endpoint DNS del RDS PostgreSQL"
