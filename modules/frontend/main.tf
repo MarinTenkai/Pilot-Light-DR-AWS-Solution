@@ -94,7 +94,7 @@ module "asg" {
   launch_template_name        = local.lt_name
   launch_template_description = "Frontend LT"
 
-  image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.id
+  image_id      = data.aws_ssm_parameter.amazon_linux_2_ami.name
   instance_type = var.frontend_instance_type
 
   iam_instance_profile_name = var.iam_instance_profile_name

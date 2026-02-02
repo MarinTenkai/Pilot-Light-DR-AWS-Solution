@@ -20,19 +20,19 @@ data "aws_iam_policy_document" "ec2_assume_role" {
 }
 
 #Creamos la política de asunción de rol para EC2 BACKEND ~!!!HAY QUE CAMBIAR!!!~
-data "aws_iam_policy_document" "backend_read_db_secret" {
-  statement {
-    sid    = "ReadRdsManagedSecret"
-    effect = "Allow"
-    actions = [
-      "secretsmanager:GetSecretValue",
-      "secretsmanager:DescribeSecret"
-    ]
-    resources = [
-      aws_db_instance.postgresql.master_user_secret[0].secret_arn
-    ]
-  }
-}
+# data "aws_iam_policy_document" "backend_read_db_secret" {
+#   statement {
+#     sid    = "ReadRdsManagedSecret"
+#     effect = "Allow"
+#     actions = [
+#       "secretsmanager:GetSecretValue",
+#       "secretsmanager:DescribeSecret"
+#     ]
+#     resources = [
+#       aws_db_instance.postgresql.master_user_secret[0].secret_arn
+#     ]
+#   }
+# }
 
 #### Locals exclusivos para la Región Primaria ####
 

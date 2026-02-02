@@ -38,12 +38,12 @@ resource "aws_iam_instance_profile" "ec2_backend_profile" {
   role = aws_iam_role.ec2_backend_role.name
 }
 
-resource "aws_iam_policy" "backend_read_db_secret" {
-  name   = "${terraform.workspace}-backend-read-db-secret"
-  policy = data.aws_iam_policy_document.backend_read_db_secret.json
-}
+# resource "aws_iam_policy" "backend_read_db_secret" {
+#   name   = "${terraform.workspace}-backend-read-db-secret"
+#   policy = data.aws_iam_policy_document.backend_read_db_secret.json
+# }
 
-resource "aws_iam_role_policy_attachment" "backend_read_db_secret_attach" {
-  role       = aws_iam_role.ec2_backend_role.name
-  policy_arn = aws_iam_policy.backend_read_db_secret.arn
-}
+# resource "aws_iam_role_policy_attachment" "backend_read_db_secret_attach" {
+#   role       = aws_iam_role.ec2_backend_role.name
+#   policy_arn = aws_iam_policy.backend_read_db_secret.arn
+# }
