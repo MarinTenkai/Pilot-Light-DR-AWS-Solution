@@ -81,12 +81,10 @@ module "frontend_primary" {
   frontend_port             = var.frontend_port
   frontend_healthcheck_path = var.frontend_healthcheck_path
   frontend_instance_type    = var.frontend_instance_type
-
-  image_id_override = data.aws_ssm_parameter.amazon_linux_2_ami.value
-
   iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
 
-  user_data_base64_override = local.frontend_user_data
+  ami_ssm_parameter_name = var.frontend_ami_ssm_parameter_name
+  user_data_path         = var.frontend_user_data_path
 
   enable_deletion_protection = var.enable_deletion_protection
 
@@ -114,9 +112,70 @@ module "frontend_secondary" {
   frontend_port             = var.frontend_port
   frontend_healthcheck_path = var.frontend_healthcheck_path
   frontend_instance_type    = var.frontend_instance_type
-  image_id_override         = data.aws_ssm_parameter.amazon_linux_2_ami.value
   iam_instance_profile_name = aws_iam_instance_profile.ec2_frontend_profile.name
-  user_data_base64_override = local.frontend_user_data
+
+  ami_ssm_parameter_name = var.frontend_ami_ssm_parameter_name
+  user_data_path         = var.frontend_user_data_path
+
+  enable_deletion_protection = var.enable_deletion_protection
+
+  tags = merge(local.common_tags, local.secondary_tags)
+}
+
+module "backend_primary" {
+  source    = "./modules/backend"
+  providers = { aws = aws.primary }
+
+  name_prefix = terraform.workspace
+  role        = "primary"
+
+  vpc_id          = module.network_primary.vpc_id
+  private_subnets = module.network_primary.private_subnets
+
+  alb_sg_id      = module.network_primary.alb_backend_sg_id
+  instance_sg_id = module.network_primary.backend_sg_id
+
+  min_size         = var.backend_min_size_primary
+  max_size         = var.backend_max_size_primary
+  desired_capacity = var.backend_desired_capacity_primary
+
+  backend_port              = var.backend_port
+  backend_healthcheck_path  = var.backend_healthcheck_path
+  backend_instance_type     = var.backend_instance_type
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
+
+  ami_ssm_parameter_name = var.backend_ami_ssm_parameter_name
+  user_data_path         = var.frontend_user_data_path
+
+  enable_deletion_protection = var.enable_deletion_protection
+
+  tags = merge(local.common_tags, local.primary_tags)
+}
+
+module "backend_secondary" {
+  source    = "./modules/backend"
+  providers = { aws = aws.secondary }
+
+  name_prefix = terraform.workspace
+  role        = "secondary"
+
+  vpc_id          = module.network_secondary.vpc_id
+  private_subnets = module.network_secondary.private_subnets
+
+  alb_sg_id      = module.network_secondary.alb_backend_sg_id
+  instance_sg_id = module.network_secondary.backend_sg_id
+
+  min_size         = var.backend_min_size_secondary
+  max_size         = var.backend_max_size_secondary
+  desired_capacity = var.backend_desired_capacity_secondary
+
+  backend_port              = var.backend_port
+  backend_healthcheck_path  = var.backend_healthcheck_path
+  backend_instance_type     = var.backend_instance_type
+  iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
+
+  ami_ssm_parameter_name = var.backend_ami_ssm_parameter_name
+  user_data_path         = var.frontend_user_data_path
 
   enable_deletion_protection = var.enable_deletion_protection
 

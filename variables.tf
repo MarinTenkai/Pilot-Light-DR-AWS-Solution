@@ -57,6 +57,31 @@ variable "flow_logs_s3_prefix" {
 
 #### ASGs Frontend & Backend comunes para Región Primaria y Secundaria
 
+# Frontend: selector de AMI por SSM (mismo en ambas regiones)
+variable "frontend_ami_ssm_parameter_name" {
+  type    = string
+  default = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
+# Backend: selector de AMI por SSM (mismo en ambas regiones)
+variable "backend_ami_ssm_parameter_name" {
+  type    = string
+  default = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
+# Overrides de user-data (base64) por capa, iguales para ambas regiones
+variable "frontend_user_data_path" {
+  description = "Ruta a un script de user-data. Si es null, el módulo usa su user-data básico con server http para prueba de conexión."
+  type        = string
+  default     = "userdata/frontend/default.sh"
+}
+
+variable "backend_user_data_path" {
+  description = "Ruta a un script de user-data. Si es null, el módulo usa su user-data básico con server http para prueba de conexión."
+  type        = string
+  default     = "userdata/backend/default.sh"
+}
+
 # Tipo de instancia para las instancias Frontend
 variable "frontend_instance_type" {
   type    = string
@@ -277,8 +302,6 @@ variable "database_subnets_cidrs_secondary" {
     error_message = "database_subnet_cidrs debe tener exactamente ${var.az_count} elementos"
   }
 }
-
-
 
 
 
