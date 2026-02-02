@@ -5,9 +5,9 @@ data "aws_ssm_parameter" "amazon_linux_2_ami" {
 
 locals {
   # Nombres (puedes incluir role para que sea más claro en consola)
-  alb_name = "${var.name_prefix}-${var.role}-alb"
-  asg_name = "${var.name_prefix}-${var.role}-frontend-asg"
-  lt_name  = "${var.name_prefix}-${var.role}-frontend-lt"
+  alb_name = "${var.role}-alb"
+  asg_name = "${var.role}-frontend-asg"
+  lt_name  = "${var.role}-frontend-lt"
 
   default_user_data_base64 = base64encode(<<-EOF
     #!/bin/bash
