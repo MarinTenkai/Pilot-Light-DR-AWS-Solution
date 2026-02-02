@@ -5,7 +5,7 @@ data "aws_ssm_parameter" "frontend_ami" {
 
 locals {
   # Nombres (puedes incluir role para que sea más claro en consola)
-  alb_name = "${var.role}-alb"
+  alb_name = "${var.role}-frontend-alb"
   asg_name = "${var.role}-frontend-asg"
   lt_name  = "${var.role}-frontend-lt"
 
