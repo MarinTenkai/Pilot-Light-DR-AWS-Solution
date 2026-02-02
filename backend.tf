@@ -18,7 +18,7 @@ module "alb_backend_primary" {
 
   vpc_id          = module.network_primary.vpc_id
   subnets         = module.network_primary.private_subnets
-  security_groups = [module.network_primary.alb_frontend_sg_id]
+  security_groups = [module.network_primary.alb_backend_sg_id]
 
   enable_deletion_protection = false
 
