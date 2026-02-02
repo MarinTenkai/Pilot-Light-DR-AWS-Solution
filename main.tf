@@ -145,7 +145,7 @@ module "backend_primary" {
   iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
 
   ami_ssm_parameter_name = var.backend_ami_ssm_parameter_name
-  user_data_path         = var.frontend_user_data_path
+  user_data_path         = var.backend_user_data_path
 
   enable_deletion_protection = var.enable_deletion_protection
 
@@ -175,7 +175,7 @@ module "backend_secondary" {
   iam_instance_profile_name = aws_iam_instance_profile.ec2_backend_profile.name
 
   ami_ssm_parameter_name = var.backend_ami_ssm_parameter_name
-  user_data_path         = var.frontend_user_data_path
+  user_data_path         = var.backend_user_data_path
 
   enable_deletion_protection = var.enable_deletion_protection
 
