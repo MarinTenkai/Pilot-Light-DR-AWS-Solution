@@ -73,23 +73,6 @@ locals {
   ssm_vpce_services = toset(["ssm", "ec2messages", "ssmmessages"])
 }
 
-## User Data para instancias Frontend
-locals {
-  frontend_user_data = base64encode(<<-EOF
-    #!/bin/bash
-    set -euxo pipefail
-
-    mkdir -p /var/www/html
-    cat > /var/www/html/index.html <<'HTML'
-    <h1>OK - Frontend Instance</h1>
-    <p>Esta es una pagina de prueba servida desde la instancia Frontend.</p>
-    HTML
-
-    nohup python3 -m http.server ${var.frontend_port} --directory /var/www/html >/var/log/frontend-server.log 2>&1 &
-  EOF
-  )
-}
-
 ## User Data para instancias Backend de la Región Primaria
 locals {
   backend_user_data_primary = base64encode(<<-EOF

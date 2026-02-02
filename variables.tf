@@ -94,6 +94,12 @@ variable "backend_port" {
   default     = 8080
 }
 
+# Opcional (si quieres controlar esto desde root)
+variable "enable_deletion_protection" {
+  type    = bool
+  default = false
+}
+
 #############################################
 ###### Variables de la Región Primaria ######
 #############################################

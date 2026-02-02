@@ -47,12 +47,12 @@ output "flow_logs_s3_destination_arn_primary" {
 # }
 
 output "frontend_alb_dns_name_primary" {
-  value       = module.alb_frontend_primary.dns_name
+  value       = module.frontend_primary.alb_dns_name
   description = "DNS público del ALB"
 }
 
 output "frontend_asg_name_primary" {
-  value       = module.autoscaling_frontend_primary.autoscaling_group_name
+  value       = module.frontend_primary.asg_name
   description = "Nombre del ASG del frontend"
 }
 
