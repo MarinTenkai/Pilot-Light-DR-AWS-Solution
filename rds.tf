@@ -5,7 +5,7 @@
 variable "db_engine_version" {
   description = "Versión de PostgreSQL (si es null, AWS selecciona la default de la región)"
   type        = string
-  default     = null
+  default     = "17.6"
 }
 
 variable "db_name" {
