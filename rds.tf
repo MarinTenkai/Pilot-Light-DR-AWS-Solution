@@ -40,7 +40,7 @@ variable "db_instance_class_secondary" {
 
 variable "db_backup_retention_days" {
   type    = number
-  default = 7
+  default = 1
 }
 
 variable "db_deletion_protection" {
