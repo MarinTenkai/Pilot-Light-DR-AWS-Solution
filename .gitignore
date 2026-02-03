@@ -44,5 +44,4 @@ terraform.rc
 *.ppk
 .ssh/
 
-pruebas.txt
-errors.txt
+.txt
