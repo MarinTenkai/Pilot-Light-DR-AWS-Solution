@@ -4,8 +4,12 @@ variable "role" { type = string } # "primary" | "secondary"
 variable "db_subnets" { type = list(string) }
 variable "vpc_security_group_ids" { type = list(string) }
 
-variable "engine_version" { type = string }
 variable "instance_class" { type = string }
+
+variable "engine_version" {
+  type    = string
+  default = null
+}
 
 variable "allocated_storage" {
   type        = number
