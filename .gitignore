@@ -44,4 +44,4 @@ terraform.rc
 *.ppk
 .ssh/
 
-# .txt
+#.txt
