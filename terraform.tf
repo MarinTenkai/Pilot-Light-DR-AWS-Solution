@@ -22,5 +22,13 @@ terraform {
       source  = "hashicorp/local"
       version = ">= 2.6.2"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = ">= 2.7.1"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.8.1"
+    }
   }
 }

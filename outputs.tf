@@ -124,3 +124,25 @@ output "frontend_failover_fqdn" {
   value       = "${var.route53_record_name}.${var.route53_zone_name}"
   description = "FQDN del record con failover."
 }
+
+########################
+#### RDS POSTGRESQL ####
+########################
+
+output "db_writer_fqdn_private" {
+  value       = "${var.db_record_name}.${var.db_private_zone_name}"
+  description = "Hostname estable (private) del writer DB. La Lambda lo mueve entre regiones."
+}
+
+output "db_secret_arn" {
+  value       = aws_secretsmanager_secret.db.arn
+  description = "Secret (replicado a secundaria) con credenciales + host estable."
+}
+
+output "db_primary_endpoint" {
+  value = module.db_primary.db_endpoint
+}
+
+output "db_secondary_endpoint" {
+  value = module.db_secondary.db_endpoint
+}

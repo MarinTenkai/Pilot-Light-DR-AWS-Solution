@@ -63,6 +63,18 @@ resource "aws_security_group" "backend_sg" {
   })
 }
 
+# SG para RDS PostgreSQL
+resource "aws_security_group" "db_sg" {
+  name        = "${var.name_prefix}-db-sg"
+  description = "SG para RDS PostgreSQL (solo desde Backend)"
+  vpc_id      = module.vpc.vpc_id
+
+  tags = merge(var.tags, {
+    name = "${var.name_prefix}-db-sg"
+    tier = "Database"
+  })
+}
+
 # SG para VPC Endpoints de SSM (Frontend/Backend -> VPCE)
 resource "aws_security_group" "vpce_sg" {
   name        = "${var.name_prefix}-vpce-sg"
@@ -161,6 +173,28 @@ resource "aws_security_group_rule" "backend_ingress_from_alb_backend" {
   to_port                  = var.backend_port
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.alb_backend_sg.id
+}
+
+# Backend -> DB (5432) (egress explícito; aunque exista egress por defecto)
+resource "aws_security_group_rule" "backend_egress_to_db" {
+  type                     = "egress"
+  security_group_id        = aws_security_group.backend_sg.id
+  description              = "Backend hacia RDS PostgreSQL (5432)"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.db_sg.id
+}
+
+# DB <- Backend (5432)
+resource "aws_security_group_rule" "db_ingress_from_backend" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.db_sg.id
+  description              = "RDS PostgreSQL desde Backend (5432)"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.backend_sg.id
 }
 
 # SSM via VPCE (443)

@@ -40,6 +40,10 @@ output "backend_sg_id" {
   value = aws_security_group.backend_sg.id
 }
 
+output "db_sg_id" {
+  value = aws_security_group.db_sg.id
+}
+
 output "vpce_sg_id" {
   value = aws_security_group.vpce_sg.id
 }
