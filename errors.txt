@@ -1,9 +1,0 @@
-Error: creating EC2 Launch Template (secondary-frontend-lt-20260202020219606600000001): operation error EC2: CreateLaunchTemplate, https response error StatusCode: 400, RequestID: decd714a-d427-417a-8283-99a5a25bde64, api error InvalidAMIID.Malformed: The image ID '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' is not valid. The expected format is ami-xxxxxxxx or ami-xxxxxxxxxxxxxxxxx.
-with module.frontend_secondary.module.asg.aws_launch_template.this[0]
-on .terraform/modules/frontend_secondary.asg/main.tf line 671, in resource "aws_launch_template" "this":
-resource "aws_launch_template" "this" {
-
-Error: creating EC2 Launch Template (primary-frontend-lt-20260202020219780000000001): operation error EC2: CreateLaunchTemplate, https response error StatusCode: 400, RequestID: e1053e92-93f7-4703-ba56-092fb4d9f0ce, api error InvalidAMIID.Malformed: The image ID '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' is not valid. The expected format is ami-xxxxxxxx or ami-xxxxxxxxxxxxxxxxx.
-with module.frontend_primary.module.asg.aws_launch_template.this[0]
-on .terraform/modules/frontend_primary.asg/main.tf line 671, in resource "aws_launch_template" "this":
-resource "aws_launch_template" "this" {
