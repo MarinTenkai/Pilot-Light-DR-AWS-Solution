@@ -43,3 +43,6 @@ terraform.rc
 *.pem
 *.ppk
 .ssh/
+
+pruebas.txt
+errors.txt

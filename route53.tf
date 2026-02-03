@@ -2,8 +2,9 @@
 ######################## Route53 / DNS (Pilot Light) ########################
 #############################################################################
 
+#Sustituir por dominio en propiedad si se quiere tener enrutamiento DSN público
 variable "route53_zone_name" {
-  description = "Nombre de la Hosted Zone pública en Route53. No requiere dominio comprado para crearse (modo demo). NO pongas punto final."
+  description = "Nombre de la Hosted Zone pública en Route53. No requiere dominio comprado para crearse (modo demo con .invalid). NO pongas punto final."
   type        = string
   default     = "pilotlight.invalid"
 }
@@ -21,7 +22,7 @@ variable "route53_health_check_type" {
 }
 
 variable "route53_health_check_port" {
-  description = "Puerto del health check (para tu ALB HTTP normalmente 80)."
+  description = "Puerto del health check (para ALB HTTP normalmente 80)."
   type        = number
   default     = 80
 }
@@ -55,7 +56,7 @@ variable "route53_evaluate_target_health" {
 # Route53 (Pilot Light DNS)
 ############################
 
-# Descubrimos los ALB desde los ARNs que ya expone tu módulo frontend
+# Descubrimos los ALB desde los ARNs que ya expone el módulo frontend
 data "aws_lb" "frontend_primary" {
   provider = aws.primary
   arn      = module.frontend_primary.alb_arn
@@ -66,7 +67,7 @@ data "aws_lb" "frontend_secondary" {
   arn      = module.frontend_secondary.alb_arn
 }
 
-# Hosted Zone pública (modo demo o real)
+# Hosted Zone pública (modo demo con .invalid o real con nombre de dominio en propiedad)
 resource "aws_route53_zone" "public" {
   provider = aws.primary
 

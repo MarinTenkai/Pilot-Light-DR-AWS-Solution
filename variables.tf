@@ -2,6 +2,7 @@
 #############################################################################
 
 #### Establecer la Región Primaria para producción ####
+#######################################################
 variable "primary_region" {
   description = "Región AWS primaria donde se despliega producción"
   type        = string
@@ -9,6 +10,7 @@ variable "primary_region" {
 }
 
 #### Establecer la Región Secundaria recuperación de desastres ####
+###################################################################
 variable "secondary_region" {
   description = "Región AWS secundaria donde se despliega disaster recovery"
   type        = string
@@ -22,12 +24,19 @@ variable "secondary_region" {
 ###### Comunes para las Regiones Primaria y Secundaria ######
 #############################################################
 
+
+#### Generales ####
+###################
+
 # Nombre del proyecto
 variable "project_name" {
   description = "Nombre del proyecto (usado para naming y tags)"
   type        = string
   default     = "Pilot Light Disaster Recovery Solution"
 }
+
+#### Networking ####
+####################
 
 # Número de Availability Zones a usar
 variable "az_count" {
@@ -36,7 +45,8 @@ variable "az_count" {
   default     = 2
 }
 
-## Flow Logs Variables
+#### Bucket S3 para logs de tráfico de las VPCs ####
+####################################################
 
 # Tipo de tráfico a capturar en los VPC Flow Logs
 variable "flow_logs_traffic_type" {
@@ -55,7 +65,8 @@ variable "flow_logs_s3_prefix" {
   default = "vpc_flow-logs/"
 }
 
-#### ASGs Frontend & Backend comunes para Región Primaria y Secundaria
+#### ASGs Frontend & Backend comunes para Región Primaria y Secundaria ####
+###########################################################################
 
 # Frontend: selector de AMI por SSM (mismo en ambas regiones)
 variable "frontend_ami_ssm_parameter_name" {
@@ -69,13 +80,14 @@ variable "backend_ami_ssm_parameter_name" {
   default = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
-# Overrides de user-data (base64) por capa, iguales para ambas regiones
+# Override de user-data para el frontend
 variable "frontend_user_data_path" {
   description = "Ruta a un script de user-data. Si es null, el módulo usa su user-data básico con server http para prueba de conexión."
   type        = string
   default     = "userdata/frontend/default.sh"
 }
 
+# Override de user-data para el backend
 variable "backend_user_data_path" {
   description = "Ruta a un script de user-data. Si es null, el módulo usa su user-data básico con server http para prueba de conexión."
   type        = string
@@ -119,7 +131,7 @@ variable "backend_port" {
   default     = 8080
 }
 
-# Opcional (si quieres controlar esto desde root)
+# Dejar en false para test/dev y en true para prod
 variable "enable_deletion_protection" {
   type    = bool
   default = false
@@ -129,7 +141,8 @@ variable "enable_deletion_protection" {
 ###### Variables de la Región Primaria ######
 #############################################
 
-## Frontend para la Región Primaria
+#### Frontend para la Región Primaria ####
+##########################################
 
 # min size del Auto Scaling Group en Frontend para la región Primaria
 variable "frontend_min_size_primary" {
@@ -149,7 +162,8 @@ variable "frontend_desired_capacity_primary" {
   default = 2
 }
 
-## Backend para la Región Primaria
+#### Backend para la Región Primaria ####
+#########################################
 
 # min size del Auto Scaling Group en Backend para la Región Primaria
 variable "backend_min_size_primary" {
@@ -169,7 +183,8 @@ variable "backend_desired_capacity_primary" {
   default = 2
 }
 
-## Networking para la Región Primaria
+#### Networking para la Región Primaria ####
+############################################
 
 # VPC cidrs para la región primaria
 variable "vpc_primary_cidr" {
@@ -214,11 +229,12 @@ variable "database_subnets_cidrs_primary" {
   }
 }
 
-#############################################
+###############################################
 ###### Variables de la Región Secundaria ######
-#############################################
+###############################################
 
-## Frontend Variables para la Región Secundaria 
+#### Frontend Variables para la Región Secundaria ####
+######################################################
 
 # min size del Auto Scaling Group en Frontend para la Región Secundaria
 variable "frontend_min_size_secondary" {
@@ -238,7 +254,8 @@ variable "frontend_desired_capacity_secondary" {
   default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
-## Backend para la Región Secundaria
+#### Backend para la Región Secundaria ####
+###########################################
 
 # min size del Auto Scaling Group en Backend para la región Secundaria
 variable "backend_min_size_secondary" {
@@ -258,7 +275,8 @@ variable "backend_desired_capacity_secondary" {
   default = 0 # 0 para estrategia Pilot Light, 1 para estrategia Warm Standby
 }
 
-## Networking para la Región Secundaria
+#### Networking para la Región Secundaria ####
+##############################################
 
 # VPC cidrs para la Región Secundaria
 variable "vpc_secondary_cidr" {
@@ -301,46 +319,4 @@ variable "database_subnets_cidrs_secondary" {
     condition     = length(var.database_subnets_cidrs_secondary) == var.az_count
     error_message = "database_subnet_cidrs debe tener exactamente ${var.az_count} elementos"
   }
-}
-
-
-
-
-
-## RDS PostgreSQL (Multi-AZ) ##
-
-variable "db_port" {
-  description = "Puerto de la BD (5432 para postgresql, 3306 para mysql)"
-  type        = number
-  default     = 5432
-}
-
-variable "postgresql_instance_class" {
-  description = "Clase de instancia RDS"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "postgresql_allocated_storage" {
-  description = "Almacenamiento inicial (GB)"
-  type        = number
-  default     = 20
-}
-
-variable "postgresql_max_allocated_storage" {
-  description = "Almacenamiento máximo autoscaling (GB)"
-  type        = number
-  default     = 100
-}
-
-variable "postgresql_db_name" {
-  description = "Nombre de la base de datos inicial"
-  type        = string
-  default     = "appdb"
-}
-
-variable "postgresql_master_username" {
-  description = "Usuario master"
-  type        = string
-  default     = "appadmin"
 }

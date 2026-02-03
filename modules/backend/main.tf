@@ -7,6 +7,8 @@ locals {
   asg_name = "${var.role}-backend-asg"
   lt_name  = "${var.role}-backend-lt"
 
+  # Userdata básico que se usa en caso de proporcionar uno en variables.tf
+  # Crea un servidor http básico con python para pruebas de conectividad sencilla con curl
   default_user_data_base64 = base64encode(<<-EOF
     #!/bin/bash
     set -euxo pipefail
@@ -35,7 +37,7 @@ module "alb" {
   subnets         = var.private_subnets
   security_groups = [var.alb_sg_id]
 
-  enable_deletion_protection = var.enable_deletion_protection
+  enable_deletion_protection = var.enable_deletion_protection #Cambiar a false para asegurarse de proteger los ALB contra eliminación accidental o mal intencionada
 
   listeners = {
     http_backend = {

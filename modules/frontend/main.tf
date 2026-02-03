@@ -4,11 +4,12 @@ data "aws_ssm_parameter" "frontend_ami" {
 }
 
 locals {
-  # Nombres (puedes incluir role para que sea más claro en consola)
   alb_name = "${var.role}-frontend-alb"
   asg_name = "${var.role}-frontend-asg"
   lt_name  = "${var.role}-frontend-lt"
 
+  # Userdata básico que se usa en caso de proporcionar uno en variables.tf
+  # Crea un servidor http básico con python para pruebas de conectividad sencilla con curl
   default_user_data_base64 = base64encode(<<-EOF
     #!/bin/bash
     set -euxo pipefail
@@ -34,7 +35,7 @@ module "alb" {
   vpc_id                     = var.vpc_id
   subnets                    = var.public_subnets
   security_groups            = [var.alb_sg_id]
-  enable_deletion_protection = var.enable_deletion_protection
+  enable_deletion_protection = var.enable_deletion_protection #Cambiar a false para asegurarse de proteger los ALB contra eliminación accidental o mal intencionada
 
   listeners = {
     http = {

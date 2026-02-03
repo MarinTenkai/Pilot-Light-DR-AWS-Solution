@@ -22,7 +22,7 @@ output "flow_logs_s3_destination_arn" {
   value = "${module.s3_bucket_flow_logs.s3_bucket_arn}/${var.flow_logs_s3_prefix}"
 }
 
-# SECURITY GROUPS
+# IDs de los Security Groups creados por el módulo
 
 output "alb_frontend_sg_id" {
   value = aws_security_group.alb_frontend_sg.id

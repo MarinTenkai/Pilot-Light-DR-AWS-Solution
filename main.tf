@@ -1,3 +1,98 @@
+#######################################
+#### Recursos Locales del proyecto ####
+#######################################
+
+## Tags comunes del proyecto ##
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = terraform.workspace
+    ManagedBy   = "Terraform"
+  }
+}
+
+## Tags para la región Primaria ##
+locals {
+  primary_tags = {
+    RegionRole = "Primary"
+  }
+}
+
+## Tags para la región Secundaria ##
+locals {
+  secondary_tags = {
+    RegionRole = "Secondary"
+  }
+}
+
+## Network ##
+
+#Extrae la lista de zonas disponibles en la region seleccionada
+data "aws_availability_zones" "primary" {
+  state = "available"
+}
+
+data "aws_availability_zones" "secondary" {
+  provider = aws.secondary
+  state    = "available"
+}
+
+## Selecciona las primeras N(var.az_count) AZs disponibles en la Región Primaria y Secundaria
+locals {
+  azs_primary   = slice(sort(data.aws_availability_zones.primary.names), 0, var.az_count)
+  azs_secondary = slice(sort(data.aws_availability_zones.secondary.names), 0, var.az_count)
+}
+
+## Recursos para Networking ##
+
+locals {
+  vpc_common = {
+    enable_nat_gateway     = true
+    one_nat_gateway_per_az = true
+    single_nat_gateway     = false
+    flow_logs_traffic_type = var.flow_logs_traffic_type
+    flow_logs_s3_prefix    = var.flow_logs_s3_prefix
+    ssm_vpce_services      = toset(["ssm", "ec2messages", "ssmmessages"])
+  }
+
+  network = {
+    primary = {
+      role             = "primary"
+      azs              = local.azs_primary
+      vpc_cidr         = var.vpc_primary_cidr
+      public_subnets   = var.public_subnets_cidrs_primary
+      private_subnets  = var.private_subnets_cidrs_primary
+      database_subnets = var.database_subnets_cidrs_primary
+
+      tags                 = merge(local.common_tags, local.primary_tags)
+      public_subnet_tags   = merge(local.common_tags, local.primary_tags, { Tier = "Public" })
+      private_subnet_tags  = merge(local.common_tags, local.primary_tags, { Tier = "Private-app" })
+      database_subnet_tags = merge(local.common_tags, local.primary_tags, { Tier = "Private-db" })
+    }
+
+    secondary = {
+      role             = "secondary"
+      azs              = local.azs_secondary
+      vpc_cidr         = var.vpc_secondary_cidr
+      public_subnets   = var.public_subnets_cidrs_secondary
+      private_subnets  = var.private_subnets_cidrs_secondary
+      database_subnets = var.database_subnets_cidrs_secondary
+
+      tags                 = merge(local.common_tags, local.secondary_tags)
+      public_subnet_tags   = merge(local.common_tags, local.secondary_tags, { Tier = "Public" })
+      private_subnet_tags  = merge(local.common_tags, local.secondary_tags, { Tier = "Private-app" })
+      database_subnet_tags = merge(local.common_tags, local.secondary_tags, { Tier = "Private-db" })
+    }
+  }
+}
+
+############################################
+#### Llamada a módulos internos Módulos ####
+############################################
+
+#### network ####
+#################
+
 module "network_primary" {
   source    = "./modules/network"
   providers = { aws = aws.primary }
@@ -60,6 +155,9 @@ module "network_secondary" {
   backend_port  = var.backend_port
 }
 
+#### frontend ####
+##################
+
 module "frontend_primary" {
   source    = "./modules/frontend"
   providers = { aws = aws.primary }
@@ -121,6 +219,9 @@ module "frontend_secondary" {
 
   tags = merge(local.common_tags, local.secondary_tags)
 }
+
+#### backend ####
+#################
 
 module "backend_primary" {
   source    = "./modules/backend"

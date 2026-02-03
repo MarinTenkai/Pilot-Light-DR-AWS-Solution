@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 locals {
-  name = "${var.name_prefix}-${var.role}" # ej: dev-primary / dev-secondary
+  name = "${var.name_prefix}-${var.role}" # ex: dev-primary / dev-secondary
 }
 
 module "vpc" {

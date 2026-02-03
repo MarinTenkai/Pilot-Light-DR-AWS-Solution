@@ -45,11 +45,6 @@ variable "single_nat_gateway" {
 variable "flow_logs_traffic_type" {
   type    = string
   default = "ALL"
-
-  validation {
-    condition     = contains(["ALL", "ACCEPT", "REJECT"], var.flow_logs_traffic_type)
-    error_message = "flow_logs_traffic_type debe ser ALL, ACCEPT o REJECT"
-  }
 }
 
 variable "flow_logs_s3_prefix" {

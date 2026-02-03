@@ -1,8 +1,13 @@
-#### Outputs Comunes de la Región Primaria y Secundaria ####
+#### Comunes ####
+#################
 
 output "Environment" {
   value = terraform.workspace
 }
+
+#################
+#### Network ####
+#################
 
 output "vpc_id_primary" {
   value = module.network_primary.vpc_id
@@ -36,6 +41,10 @@ output "database_subnets_secondary" {
   value = module.network_secondary.database_subnets
 }
 
+####################################################
+#### Bucket S3 para logs de tráfico de las VPCs ####
+####################################################
+
 output "flow_logs_s3_destination_arn_primary" {
   value = module.network_primary.flow_logs_s3_destination_arn
 }
@@ -43,6 +52,10 @@ output "flow_logs_s3_destination_arn_primary" {
 output "flow_logs_s3_destination_arn_secondary" {
   value = module.network_secondary.flow_logs_s3_destination_arn
 }
+
+################################
+#### Elastic Load Balancers ####
+################################
 
 output "frontend_alb_dns_name_primary" {
   value       = module.frontend_primary.alb_dns_name
@@ -64,6 +77,10 @@ output "backend_alb_dns_name_secondary" {
   description = "DNS del ALB interno del backend (solo se puede resolver dentro de la VPC)"
 }
 
+#############################
+#### Auto Scaling Groups ####
+#############################
+
 output "frontend_asg_name_primary" {
   value       = module.frontend_primary.asg_name
   description = "Nombre del ASG del frontend"
@@ -84,6 +101,10 @@ output "backend_asg_name_secondary" {
   description = "Nombre del ASG del frontend"
 }
 
+##################
+#### Route 53 ####
+##################
+
 output "route53_zone_name" {
   value       = aws_route53_zone.public.name
   description = "Nombre de la hosted zone creada."
@@ -103,25 +124,3 @@ output "frontend_failover_fqdn" {
   value       = "${var.route53_record_name}.${var.route53_zone_name}"
   description = "FQDN del record con failover."
 }
-
-
-# output "rds_postgresql_endpoint" {
-#   description = "Endpoint DNS del RDS PostgreSQL"
-#   value       = aws_db_instance.postgresql.endpoint
-# }
-
-# output "rds_postgresql_port" {
-#   description = "Puerto del RDS PostgreSQL"
-#   value       = aws_db_instance.postgresql.port
-# }
-
-# output "rds_postgresql_db_name" {
-#   description = "Nombre de la DB"
-#   value       = var.postgresql_db_name
-# }
-
-# output "rds_postgres_master_secret_arn" {
-#   description = "Secret ARN (username/password) creado por RDS en Secrets Manager"
-#   value       = aws_db_instance.postgresql.master_user_secret[0].secret_arn
-#   sensitive   = true
-# }
