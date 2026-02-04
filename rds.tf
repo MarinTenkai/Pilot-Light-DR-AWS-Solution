@@ -73,7 +73,11 @@ variable "enable_db_dr_automation" {
 
 resource "random_password" "db_master" {
   length  = 24
+  upper   = true
+  lower   = true
   special = true
+  # Lista de caracteres especiales permitidos (NO incluir / @ " ni espacio)
+  override_special = "!#$%&*()-_+=.,:;?[]{}^~|`"
 }
 
 # KMS para RDS/Secrets (uno por región)
