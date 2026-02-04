@@ -99,10 +99,15 @@ resource "aws_kms_key" "rds_secondary" {
   tags = merge(local.common_tags, local.secondary_tags, { Tier = "KMS" })
 }
 
+# sufijo hex aleatorio
+resource "random_id" "secret_suffix" {
+  byte_length = 4 # 4 bytes -> 8 hex chars; aumenta si quieres más entropía
+}
+
 # Secret en primaria con réplica en secundaria (mismo secreto en ambas regiones)
 resource "aws_secretsmanager_secret" "db" {
   provider    = aws.primary
-  name        = "${terraform.workspace}/rds/postgres"
+  name        = "${terraform.workspace}/rds/postgres-${random_id.secret_suffix.hex}"
   description = "Credenciales y endpoint estable de PostgreSQL"
 
   kms_key_id = aws_kms_key.rds_primary.arn
