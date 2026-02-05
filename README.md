@@ -1,93 +1,134 @@
-# AWS Pilot Light Disaster Recovery con Terraform
+# Pilot Light Disaster Recovery (3-Tier) en AWS con Terraform (Multi-Region)
 
-Implementación **infraestructura como código (IaC)** de una estrategia **Pilot Light Disaster Recovery** en **AWS**, usando **Terraform** e integración con **GitHub** (control de versiones, revisiones y despliegues automatizados).
+Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
-Este repositorio nace como proyecto práctico de formación para **AWS Solutions Architect** y **Terraform Associate**, con tres objetivos principales:
-
-- Poner en práctica y consolidar conocimientos de **arquitectura en AWS** y **Terraform**.
-- Profundizar en patrones reales de **alta disponibilidad, resiliencia y recuperación ante desastres**.
-- Construir un **portfolio profesional** orientado a roles como **Cloud Engineer / AWS Solutions Architect / Cloud Architect**.
-
----
-
-## Arquitectura objetivo
-
-La solución replica el ejemplo oficial de AWS para **Pilot Light** (DR), donde se mantiene un “mínimo” de infraestructura activa en la región secundaria (principalmente datos/replicación), y la capa de cómputo se levanta bajo demanda durante un evento de desastre.
-
-![Pilot Light Architecture](https://docs.aws.amazon.com/es_es/whitepapers/latest/disaster-recovery-workloads-on-aws/images/pilot-light-architecture.png)
-
-**Componentes principales (alto nivel):**
-
-- **Route 53** para conmutación (failover) a nivel DNS.
-- **Elastic Load Balancing (ELB/ALB)** para entrada de tráfico en cada región.
-- **Auto Scaling Groups (ASG)** para capa de **frontend** y **aplicación**.
-- **Amazon Aurora Global Database** (replicación asíncrona cross-region) como base de datos principal/replica.
-- **Snapshots / backups** para recuperación adicional (según la estrategia final definida).
-
-> Referencia de AWS:  
+> Referencia oficial (AWS) del patrón Pilot Light DR:  
 > https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html
 
----
+## ![Pilot Light Architecture](https://docs.aws.amazon.com/es_es/whitepapers/latest/disaster-recovery-workloads-on-aws/images/pilot-light-architecture.png)
 
-## ¿Qué es “Pilot Light” (en este contexto)?
+## Objetivos del proyecto
 
-**Pilot Light** mantiene en la región secundaria los componentes críticos (por ejemplo, **base de datos replicada**, almacenamiento y configuración), mientras que la capa de cómputo se mantiene apagada o mínima.  
-Durante un incidente, se **escala/activa** la infraestructura necesaria para restaurar el servicio con menor RTO/RPO que estrategias puramente “backup & restore”, pero con menor coste que “warm standby” o “multi-site active/active”.
-
----
-
-## Alcance del repositorio
-
-Este repositorio está diseñado para ser **público, reutilizable y desplegable rápidamente**, idealmente con configuración mínima por parte del usuario (vía variables).
-
-> **Nota:** La lista exacta de variables “mínimas” se irá refinando a medida que el proyecto avance. Este README se actualizará con la lista definitiva y ejemplos completos.
+- Practicar diseño de **arquitecturas resilientes** en AWS (multi-AZ + multi-region).
+- Practicar IaC con **Terraform** usando un enfoque modular y reutilizable.
+- Proveer un repositorio público que cualquier persona pueda clonar y desplegar rápidamente ajustando unas pocas variables.
 
 ---
 
-## Características (planned / en progreso)
+## Arquitectura (alto nivel)
 
-- [ ] Despliegue multi-región (Región primaria + Región secundaria).
-- [ ] VPC y red por región (subnets, route tables, IGW/NAT según diseño).
-- [ ] ALB/ELB por región con target groups.
-- [ ] ASG para frontend y application tier (primary activo, secondary “pilot light”).
-- [ ] Aurora (Primary) + Aurora Global Database (Replica cross-region).
-- [ ] Route 53 failover con health checks.
-- [ ] Pipelines de CI/CD (GitHub Actions): `terraform fmt`, `validate`, `plan`, `apply` (con controles).
-- [ ] Documentación de runbook de DR: **failover** y **failback**.
-- [ ] Buenas prácticas: tagging, módulos, separación por entornos, controles de seguridad.
+**Región primaria (producción)**: `eu-south-2` (España)  
+**Región secundaria (DR)**: `eu-west-3` (París)
+
+### Flujo de tráfico (3-tiers)
+
+1. **Route 53 (Failover DNS)** expone un único FQDN público (por defecto `app.pilotlight.invalid`).
+2. El tráfico entra por un **ALB público** en cada región:
+   - **PRIMARY**: recibe tráfico normalmente.
+   - **SECONDARY**: actúa como destino en caso de conmutación por error.
+3. El ALB público enruta a un **Auto Scaling Group (ASG) de Frontend** en **subredes privadas**.
+4. El Frontend consume el Backend mediante un **ALB interno (privado)**.
+5. El ALB interno enruta a un **ASG de Backend** en **subredes privadas**.
+6. El Backend accede a **RDS PostgreSQL**:
+   - **Primaria**: **Multi-AZ** (writer).
+   - **Secundaria**: **read replica cross-region**.
+
+### Pilot Light vs Warm Standby (coste vs RTO)
+
+En Pilot Light, la **región secundaria** mantiene la infraestructura “mínima” lista, pero **con capacidad de cómputo a 0**:
+
+- `frontend_min_size_secondary = 0` / `frontend_desired_capacity_secondary = 0`
+- `backend_min_size_secondary = 0` / `backend_desired_capacity_secondary = 0`
+
+✅ **Ventaja**: menor coste.  
+⚠️ **Desventaja**: aumenta el tiempo de recuperación (RTO), porque durante el failover el ASG debe lanzar instancias desde cero.
+
+Si quieres evolucionarlo a **Warm Standby**, sube `min_size` y `desired_capacity` en secundaria (por ejemplo a 1 o 2) para que haya capacidad “caliente” disponible, a cambio de mayor coste.
 
 ---
 
-## Requisitos
+## Conmutación por error (Route 53)
 
-### Herramientas
+- Se crea una **Hosted Zone pública** y un **record A (Alias)** con política **Failover**:
+  - **PRIMARY** → ALB público de la región primaria.
+  - **SECONDARY** → ALB público de la región secundaria.
+- **Route 53 Health Check** se realiza contra el **ALB público primario**.
+- Si el health check se marca como **unhealthy**, Route 53 conmuta el DNS a **SECONDARY**. Además se envía una notificación por SNS al email a los responsables para iniciar el Runbook DR de RDS.
+- Cuando el health check vuelve a **healthy**, Route 53 hace **failback** a **PRIMARY**.
 
-- **Terraform** (versión a definir en `.terraform-version` o `required_version`).
-- **AWS CLI** configurada con credenciales y región por defecto.
-- Una cuenta de **AWS** con permisos suficientes para crear recursos (VPC, ALB, ASG, RDS/Aurora, Route 53, IAM, etc.).
-- (Opcional) **GitHub Actions** habilitado en tu fork si planeas usar CI/CD.
+> Nota: por defecto se usa `pilotlight.invalid` para pruebas sin dominio real. Para uso real, configura `route53_zone_name` con un dominio que controles y delega los NS.
 
-### Conocimientos recomendados
+---
 
-- Networking en AWS (VPC, subnets, routing).
-- IAM y buenas prácticas de seguridad.
-- Terraform (modules, state, variables, workspaces/entornos).
+## Base de datos (RDS PostgreSQL) y DNS privado estable
+
+Se usa **RDS PostgreSQL** (en lugar de Aurora) por limitaciones típicas de entornos de laboratorio/free tier.
+
+- **Primaria**: RDS PostgreSQL **Multi-AZ** (writer).
+- **Secundaria**: **read replica cross-region**.
+
+Para desacoplar a la aplicación del endpoint físico de la DB, se crea:
+
+- Una **Private Hosted Zone** (`pilotlight.internal` por defecto) asociada a **ambas VPCs** (primaria y secundaria).
+- Un **CNAME estable**: `db.pilotlight.internal` apuntando al writer activo (por defecto el primario).
+
+### Sobre la automatización de DR de la DB (estado actual)
+
+Se inició un enfoque para automatizar la promoción de la réplica y el failback (Lambda + lógica de snapshots/recreación), pero **no está finalizado** en este repositorio.  
+Actualmente, el enfoque recomendado es **manual**: ante failover a secundaria, los responsables deben **promover** la réplica y actualizar el “writer record” privado si aplica.
+
+> En el código existe `enable_db_dr_automation` como variable preparatoria para esa automatización futura, pero la lógica completa no está implementada en este proyecto.
+
+---
+
+## Seguridad y controles implementados
+
+### Segmentación de red
+
+- **Subredes públicas**: únicamente para los **ALB públicos**.
+- **Subredes privadas (app)**: ASGs de **Frontend** y **Backend**.
+- **Subredes privadas (db)**: RDS.
+
+### Security Groups (principio de mínimo privilegio)
+
+- Internet → **ALB público**: `80/443`.
+- **ALB público** → **Frontend**: solo `frontend_port` (por defecto `80`).
+- **Frontend** → **ALB interno**: solo `backend_port` (por defecto `8080`).
+- **ALB interno** → **Backend**: solo `backend_port`.
+- **Backend** → **RDS**: solo `5432`.
+- Acceso a **SSM** mediante **VPC Endpoints (Interface)** y SG dedicados (`443`).
+
+### Acceso a instancias sin SSH
+
+- Roles IAM para EC2 (Frontend/Backend) con `AmazonSSMManagedInstanceCore`.
+- Endpoints privados de SSM (`ssm`, `ec2messages`, `ssmmessages`) en subredes privadas.
+
+### Auditoría de red
+
+- **VPC Flow Logs** hacia **S3** (bucket con bloqueo público y cifrado SSE-S3).
+
+### Secretos y cifrado
+
+- **Secrets Manager** en primaria con **réplica en secundaria**, cifrado con **KMS** por región.
+- **RDS cifrado** con KMS (clave por región, rotación habilitada).
 
 ---
 
 ## Estructura del repositorio
 
-> La estructura exacta puede cambiar mientras el proyecto madura.
-
 ```text
 .
-├── modules/                 # Módulos reutilizables (network, alb, asg, aurora, route53, etc.)
-├── envs/                    # Configuración por entorno (dev/stage/prod) o por región
-├── .github/workflows/       # Pipelines de GitHub Actions
-├── examples/                # Ejemplos de uso y despliegue rápido
-├── docs/                    # Runbooks, decisiones, diagramas, notas de arquitectura
-├── main.tf
-├── variables.tf
-├── outputs.tf
-└── README.md
+├── main.tf                  # Orquestación: network, frontend, backend
+├── variables.tf             # Variables principales (rápida configuración)
+├── outputs.tf               # Outputs útiles (ALBs, ASGs, endpoints, DNS)
+├── route53.tf               # Hosted zone pública + health check + failover record
+├── rds.tf                   # RDS primary + replica + private DNS + Secrets/KMS
+├── modules/
+│   ├── network/             # VPC, subnets, NAT, flow logs, SGs, VPC endpoints SSM
+│   ├── frontend/            # ALB público + ASG frontend
+│   ├── backend/             # ALB interno + ASG backend
+│   └── database/            # RDS primary / replica
+└── userdata/
+    ├── frontend/default.sh  # User-data por defecto (servidor HTTP simple)
+    └── backend/default.sh   # User-data por defecto (servidor HTTP simple)
 ```

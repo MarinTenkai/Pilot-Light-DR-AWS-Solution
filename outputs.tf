@@ -5,6 +5,16 @@ output "Environment" {
   value = terraform.workspace
 }
 
+output "dr_failover_sns_topic_arn" {
+  value       = try(aws_sns_topic.dr_failover[0].arn, null)
+  description = "SNS Topic ARN para notificaciones de FAILOVER"
+}
+
+output "dr_failback_sns_topic_arn" {
+  value       = try(aws_sns_topic.dr_failback[0].arn, null)
+  description = "SNS Topic ARN para notificaciones de FAILBACK"
+}
+
 #################
 #### Network ####
 #################

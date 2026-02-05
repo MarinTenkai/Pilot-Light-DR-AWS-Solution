@@ -61,12 +61,6 @@ variable "db_record_name" {
   default     = "db"
 }
 
-# Automatización
-variable "enable_db_dr_automation" {
-  type    = bool
-  default = true
-}
-
 #############################################################################
 ############################ RDS + Private DNS ##############################
 #############################################################################
@@ -230,9 +224,4 @@ resource "aws_route53_record" "db_writer" {
   ttl     = 30
 
   records = [module.db_primary.db_address]
-
-  # Lo actualizará la Lambda en failover/failback
-  lifecycle {
-    ignore_changes = [records]
-  }
 }

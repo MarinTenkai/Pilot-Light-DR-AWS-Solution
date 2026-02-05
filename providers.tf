@@ -25,3 +25,9 @@ provider "aws" {
     }
   }
 }
+
+# Route53 HealthCheck metrics están en CloudWatch us-east-1 (N. Virginia)
+provider "aws" {
+  alias  = "sns"
+  region = "us-east-1"
+}

@@ -35,6 +35,21 @@ variable "project_name" {
   default     = "Pilot Light Disaster Recovery Solution"
 }
 
+variable "enable_dr_notifications" {
+  description = "Habilita/deshabilita notificaciones por email cuando el healthcheck primario cae (failover) y cuando se recupera (failback)."
+  type        = bool
+  default     = true
+}
+
+variable "dr_notification_emails" {
+  description = "Lista de emails de responsables a notificar (suscripción SNS por email). Requiere confirmación por cada destinatario."
+  type        = list(string)
+  default = [
+    "davidmarinriver@gmail.com",
+    # "responsable2@tu-dominio.com",
+  ]
+}
+
 #### Networking ####
 ####################
 

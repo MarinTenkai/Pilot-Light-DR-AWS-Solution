@@ -1,2 +1,3 @@
 # Par evitar que git ejecutado en windows modifique los salto de líneas de nuestros shell scripts para los user data.
 *.sh text eol=lf
+*.md -text
