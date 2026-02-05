@@ -2,11 +2,9 @@
 
 Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
+![[Pilot Light Disaster Recovery - AWS Solutions Architech.png]]
 > Referencia oficial (AWS) del patrón Pilot Light DR:  
 > https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html
-
-## ![Pilot Light Architecture](https://docs.aws.amazon.com/es_es/whitepapers/latest/disaster-recovery-workloads-on-aws/images/pilot-light-architecture.png)
-
 ## Objetivos del proyecto
 
 - Practicar diseño de **arquitecturas resilientes** en AWS (multi-AZ + multi-region).
@@ -14,7 +12,6 @@ Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Ba
 - Proveer un repositorio público que cualquier persona pueda clonar y desplegar rápidamente ajustando unas pocas variables.
 
 ---
-
 ## Arquitectura (alto nivel)
 
 **Región primaria (producción)**: `eu-south-2` (España)  
@@ -119,16 +116,50 @@ Actualmente, el enfoque recomendado es **manual**: ante failover a secundaria, l
 ```text
 .
 ├── main.tf                  # Orquestación: network, frontend, backend
-├── variables.tf             # Variables principales (rápida configuración)
+├── variables.tf             # Variables principales (Usar para configuración)
 ├── outputs.tf               # Outputs útiles (ALBs, ASGs, endpoints, DNS)
 ├── route53.tf               # Hosted zone pública + health check + failover record
+├── sns.tf                   # Notificaciones por correo de eventos de desastre
 ├── rds.tf                   # RDS primary + replica + private DNS + Secrets/KMS
 ├── modules/
 │   ├── network/             # VPC, subnets, NAT, flow logs, SGs, VPC endpoints SSM
 │   ├── frontend/            # ALB público + ASG frontend
 │   ├── backend/             # ALB interno + ASG backend
 │   └── database/            # RDS primary / replica
-└── userdata/
-    ├── frontend/default.sh  # User-data por defecto (servidor HTTP simple)
-    └── backend/default.sh   # User-data por defecto (servidor HTTP simple)
+├── userdata/
+│   ├── frontend/default.sh  # User-data por defecto (servidor HTTP simple)
+│   └── backend/default.sh   # User-data por defecto (servidor HTTP simple)
+└── documentación/
+│   ├── Backend.md           # Documentación técnica del Backend
+│   └── Database.md          # Documentación técnica de Database
+│   ├── Frontend.md          # Documentación técnica de Frontend
+│   └── Network.md           # Documentación técnica de Network
+│   ├── Route53.md           # Documentación técnica de Route53
+│   ├── diagrama del proyecto.png
+│   └── Runbook DR Manual CLI - RDS PostgreSQL (Pilot Light).md
 ```
+## ⚠️ Advertencia — **Protección contra eliminación (deletion protection)**
+
+> **Lectura obligatoria antes de desplegar en _producción_**.  
+> Estas variables controlan la **protección contra eliminación** de recursos críticos (ALB, RDS, etc.). En entornos de pruebas algunos valores pueden desactivarse para facilitar ciclos rápidos de creación/ destrucción; **bajo ningún concepto** deje estas protecciones desactivadas en producción.
+### ¿Qué hacen estas variables?
+
+Variables como `enable_deletion_protection`, `db_deletion_protection` (y nombres análogos en módulos) habilitan la **protección contra borrado** a nivel de recurso. Cuando están en `true`:
+
+- AWS impide la eliminación accidental del recurso desde la consola o desde Terraform (dependiendo del recurso).
+    
+- Evitan pérdida irreversible de datos o downtime por borrados accidentales.
+    
+
+Cuando están en `false` es **mucho más fácil** destruir recursos (útil en entornos de laboratorio) pero **muy peligroso** en producción.
+
+---
+
+## Variables relevantes en este repositorio (ejemplos)
+
+- `enable_deletion_protection` (root / ALB, módulos frontend/backend pueden exponer su propio flag)
+    
+- `db_deletion_protection` / `deletion_protection` (RDS / módulo database)
+    
+
+> Revisa `variables.tf` y los `modules/*/variables.tf` si necesitas localizar flags adicionales por módulo y cambie dichos valores a "true" para evitar incidentes.
