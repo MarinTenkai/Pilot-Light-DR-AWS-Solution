@@ -2,7 +2,8 @@
 
 Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
-![[Pilot Light Disaster Recovery - AWS Solutions Architech.png]]
+<img width="1242" height="852" alt="Pilot Light Disaster Recovery - AWS Solutions Architech" src="https://github.com/user-attachments/assets/f85f4dca-3c46-4eaa-a9d8-bb9ce067ab61" />
+![[Pilot Light Disaster Recovery - AWS Solutions Architech.png]](/documentación-Pilot Light Disaster Recovery - AWS Solutions Architech.png)
 > Referencia oficial (AWS) del patrón Pilot Light DR:  
 > https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html
 ## Objetivos del proyecto
