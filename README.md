@@ -170,11 +170,6 @@ Cuando están en `false` es **mucho más fácil** destruir recursos (útil en en
 
 <a id="english-overview"></a>
 ## Quick English Overview
-
-This infrastructure follows a Pilot Light disaster recovery methodology as part of a Disaster Recovery plan. I used Terraform to build it, following the Well-Architected Framework, so the infrastructure is easy to deploy, modify, and debug. Also, before this, my main field was cybersecurity, so I made sure to build a resilient infrastructure that matches the latest industry best practices and frameworks, following principles such as defense in depth, least privilege, and zero trust from the start of the development process.
-
-The infrastructure consists, at a high level, of two identical environments deployed in two different regions: one primary and one secondary/recovery. The secondary is kept at a minimum level of functionality to save costs but is ready to take over at any moment if the primary fails. These environments are composed of three layers.
-
 ### Layer 1: Frontend (public subnets)
 The first layer includes Route 53, responsible for making the infrastructure easily accessible from the internet, as well as being the main switch for alternating regions in case of a large-scale disaster. Additionally, there is a load balancer in front of an auto-scaling group of EC2 instances. Following a Pilot Light policy, a minimum number of instances are always active to ensure high availability (this can be easily changed via variables to a Warm Standby strategy, where compute capacity is zero and therefore takes some time to become operational once it receives traffic).
 ### Layer 2: Backend (private subnets)
