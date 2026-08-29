@@ -1,5 +1,7 @@
 # 3-Tier App con Pilot Light Disaster Recovery en AWS usando Terraform (Multi-Region y Multi-AZ)
 
+#### [Click here to see the quick English overview](#L171)
+
 Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
 <img width="1242" height="852" alt="Pilot Light Disaster Recovery - AWS Solutions Architech" src="https://github.com/user-attachments/assets/f85f4dca-3c46-4eaa-a9d8-bb9ce067ab61" />
@@ -165,3 +167,22 @@ Cuando están en `false` es **mucho más fácil** destruir recursos (útil en en
     
 
 > Revisa `variables.tf` y los `modules/*/variables.tf` si necesitas localizar flags adicionales por módulo y cambie dichos valores a "true" para evitar incidentes.
+
+# ENGLISH
+
+This infrastructure follows a Pilot Light disaster recovery methodology as part of a Disaster Recovery plan. I used Terraform to build it, following the Well-Architected Framework, so the infrastructure is easy to deploy, modify, and debug. Also, before this, my main field was cybersecurity, so I made sure to build a resilient infrastructure that matches the latest industry best practices and frameworks, following principles such as defense in depth, least privilege, and zero trust from the start of the development process.
+
+The infrastructure consists, at a high level, of two identical environments deployed in two different regions: one primary and one secondary/recovery. The secondary is kept at a minimum level of functionality to save costs but is ready to take over at any moment if the primary fails. These environments are composed of three layers.
+
+### Layer 1: Frontend (public subnets)
+The first layer includes Route 53, responsible for making the infrastructure easily accessible from the internet, as well as being the main switch for alternating regions in case of a large-scale disaster. Additionally, there is a load balancer in front of an auto-scaling group of EC2 instances. Following a Pilot Light policy, a minimum number of instances are always active to ensure high availability (this can be easily changed via variables to a Warm Standby strategy, where compute capacity is zero and therefore takes some time to become operational once it receives traffic).
+### Layer 2: Backend (private subnets)
+This layer follows the same structure as the frontend but is placed in private subnets with strong security. It is dedicated to raw computing capacity, where all the application logic is executed.
+### Layer 3: Database (private subnets)
+The third layer is the database layer, configured in a Multi-AZ setup with asynchronous Cross-Region replication. This is where all the information needed for the application to function properly is stored.
+### Network
+Additionally, all the network configuration is kept in its own separate module due to its complexity and to allow for easier modification, as it constitutes the backbone that enables the infrastructure to operate correctly and securely.
+### Customization
+Since the idea was for the infrastructure to be highly customizable with as little effort as possible, the code is full of variables declared in variables.tf, making it very easy to change regions, names, communication between components, the behavior of different components, etc.
+### Documentation
+The project includes full documentation as well as step-by-step explanations of what each part of the code does. Unfortunately, it is in Spanish, since that is my native language, and I haven't had time to translate it into English yet, but the browser's automatic translation or DeepL should be more than enough.
