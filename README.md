@@ -1,6 +1,6 @@
 # 3-Tier App con Pilot Light Disaster Recovery en AWS usando Terraform (Multi-Region y Multi-AZ)
 
-## ⚡ [Click here to see the quick English overview](#english-overview) ⚡
+[![English Overview](https://img.shields.io/badge/README-English%20Overview-blue?style=for-the-badge&logo=github)](#english-overview)
 
 Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
