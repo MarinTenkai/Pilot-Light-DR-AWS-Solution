@@ -1,6 +1,6 @@
 # 3-Tier App con Pilot Light Disaster Recovery en AWS usando Terraform (Multi-Region y Multi-AZ)
 
-#### [Click here to see the quick English overview](#L171)
+#### [Click here to see the quick English overview](#english-overview)
 
 Implementación **multi-región** de una arquitectura **3-tiers** (Frontend / Backend / Database) en AWS siguiendo el patrón **Pilot Light Disaster Recovery**, desplegada con **Terraform** y pensada para usarse como proyecto **formativo** y **portfolio** (AWS Solutions Architect + Terraform Associate).
 
@@ -168,7 +168,8 @@ Cuando están en `false` es **mucho más fácil** destruir recursos (útil en en
 
 > Revisa `variables.tf` y los `modules/*/variables.tf` si necesitas localizar flags adicionales por módulo y cambie dichos valores a "true" para evitar incidentes.
 
-# ENGLISH
+<a id="english-overview"></a>
+## Quick English Overview
 
 This infrastructure follows a Pilot Light disaster recovery methodology as part of a Disaster Recovery plan. I used Terraform to build it, following the Well-Architected Framework, so the infrastructure is easy to deploy, modify, and debug. Also, before this, my main field was cybersecurity, so I made sure to build a resilient infrastructure that matches the latest industry best practices and frameworks, following principles such as defense in depth, least privilege, and zero trust from the start of the development process.
 
